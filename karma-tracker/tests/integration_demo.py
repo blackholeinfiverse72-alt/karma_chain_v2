@@ -30,24 +30,24 @@ def test_life_event():
         "source": "unreal_engine"
     }
     
-    print(f"📤 Sending request to: {BASE_URL}/event/")
-    print(f"📝 Payload: {json.dumps(payload, indent=2)}")
+    print(f"[SEND] Sending request to: {BASE_URL}/event/")
+    print(f"[DATA] Payload: {json.dumps(payload, indent=2)}")
     
     try:
         response = requests.post(f"{BASE_URL}/event/", json=payload)
-        print(f"\n📊 Response Status: {response.status_code}")
+        print(f"\n[STAT] Response Status: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ SUCCESS!")
-            print(f"📄 Response: {json.dumps(result, indent=2)}")
+            print(f"[SUCCESS]")
+            print(f"[RESP] Response: {json.dumps(result, indent=2)}")
             return True
         else:
-            print(f"❌ FAILED")
-            print(f"📄 Error: {response.json()}")
+            print(f"[FAILED]")
+            print(f"[ERR] Error: {response.json()}")
             return False
     except Exception as e:
-        print(f"❌ Exception: {str(e)}")
+        print(f"[EXCEPTION] Exception: {str(e)}")
         return False
 
 def test_stats_request():
@@ -62,24 +62,24 @@ def test_stats_request():
         "source": "unreal_engine"
     }
     
-    print(f"📤 Sending request to: {BASE_URL}/event/")
-    print(f"📝 Payload: {json.dumps(payload, indent=2)}")
+    print(f"[SEND] Sending request to: {BASE_URL}/event/")
+    print(f"[DATA] Payload: {json.dumps(payload, indent=2)}")
     
     try:
         response = requests.post(f"{BASE_URL}/event/", json=payload)
-        print(f"\n📊 Response Status: {response.status_code}")
+        print(f"\n[STAT] Response Status: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ SUCCESS!")
-            print(f"📄 User Stats: {json.dumps(result['data'], indent=2)}")
+            print(f"[SUCCESS]")
+            print(f"[RESP] User Stats: {json.dumps(result['data'], indent=2)}")
             return True
         else:
-            print(f"❌ FAILED")
-            print(f"📄 Error: {response.json()}")
+            print(f"[FAILED]")
+            print(f"[ERR] Error: {response.json()}")
             return False
     except Exception as e:
-        print(f"❌ Exception: {str(e)}")
+        print(f"[EXCEPTION] Exception: {str(e)}")
         return False
 
 def test_appeal():
@@ -96,24 +96,24 @@ def test_appeal():
         "source": "unreal_engine"
     }
     
-    print(f"📤 Sending request to: {BASE_URL}/event/")
-    print(f"📝 Payload: {json.dumps(payload, indent=2)}")
+    print(f"[SEND] Sending request to: {BASE_URL}/event/")
+    print(f"[DATA] Payload: {json.dumps(payload, indent=2)}")
     
     try:
         response = requests.post(f"{BASE_URL}/event/", json=payload)
-        print(f"\n📊 Response Status: {response.status_code}")
+        print(f"\n[STAT] Response Status: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ SUCCESS!")
-            print(f"📄 Appeal Result: {json.dumps(result['data'], indent=2)}")
+            print(f"[SUCCESS]")
+            print(f"[RESP] Appeal Result: {json.dumps(result['data'], indent=2)}")
             return True
         else:
-            print(f"❌ FAILED")
-            print(f"📄 Error: {response.json()}")
+            print(f"[FAILED]")
+            print(f"[ERR] Error: {response.json()}")
             return False
     except Exception as e:
-        print(f"❌ Exception: {str(e)}")
+        print(f"[EXCEPTION] Exception: {str(e)}")
         return False
 
 def test_death_event():
@@ -128,30 +128,30 @@ def test_death_event():
         "source": "unreal_engine"
     }
     
-    print(f"📤 Sending request to: {BASE_URL}/event/")
-    print(f"📝 Payload: {json.dumps(payload, indent=2)}")
+    print(f"[SEND] Sending request to: {BASE_URL}/event/")
+    print(f"[DATA] Payload: {json.dumps(payload, indent=2)}")
     
     try:
         response = requests.post(f"{BASE_URL}/event/", json=payload)
-        print(f"\n📊 Response Status: {response.status_code}")
+        print(f"\n[STAT] Response Status: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ SUCCESS!")
-            print(f"📄 Death Event: {json.dumps(result['data'], indent=2)}")
+            print(f"[SUCCESS]")
+            print(f"[RESP] Death Event: {json.dumps(result['data'], indent=2)}")
             return True
         else:
-            print(f"❌ FAILED")
-            print(f"📄 Error: {response.json()}")
+            print(f"[FAILED]")
+            print(f"[ERR] Error: {response.json()}")
             return False
     except Exception as e:
-        print(f"❌ Exception: {str(e)}")
+        print(f"[EXCEPTION] Exception: {str(e)}")
         return False
 
 def main():
     """Run all integration tests"""
     print("\n" + "="*70)
-    print("  🕉️  KARMA CHAIN - UNREAL ENGINE INTEGRATION TEST  🕉️")
+    print("  [KARMA CHAIN - UNREAL ENGINE INTEGRATION TEST]")
     print("="*70)
     print(f"  Testing against: {BASE_URL}")
     print(f"  Test user: {USER_ID}")
@@ -178,15 +178,15 @@ def main():
     total = len(results)
     
     for test_name, result in results:
-        status = "✅ PASS" if result else "❌ FAIL"
+        status = "[PASS]" if result else "[FAIL]"
         print(f"  {test_name:20} {status}")
     
     print(f"\n  Total: {passed}/{total} tests passed")
     
     if passed == total:
-        print("\n  🎉 All tests passed! System is ready for Unreal integration!")
+        print("\n  [SUCCESS] All tests passed! System is ready for Unreal integration!")
     else:
-        print(f"\n  ⚠️  {total - passed} test(s) failed. Please check the errors above.")
+        print(f"\n  [WARNING] {total - passed} test(s) failed. Please check the errors above.")
     
     print("\n" + "="*70 + "\n")
     

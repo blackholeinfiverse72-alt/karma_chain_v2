@@ -8,7 +8,7 @@ import json
 import logging
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Tuple
 import requests
 from database import karma_events_col, users_col
@@ -73,7 +73,7 @@ class KarmicFeedbackEngine:
             "behavioral_bias": behavioral_bias,
             "dynamic_influence": dynamic_influence,
             "net_karma": karma_calc.get("net_karma", 0),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     
     def _calculate_behavioral_bias(self, user_doc: Dict[str, Any]) -> float:
@@ -166,7 +166,7 @@ class KarmicFeedbackEngine:
             "user_id": user_id,
             "overall_influence": influence,
             "module_influence": module_influence,
-            "aggregation_timestamp": datetime.utcnow().isoformat()
+            "aggregation_timestamp": datetime.now(timezone.utc).isoformat()
         }
     
     async def publish_feedback_signal(self, user_id: str, 
@@ -191,7 +191,7 @@ class KarmicFeedbackEngine:
                 "user_id": user_id,
                 "type": "karmic_influence",
                 "data": aggregated_data,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
             
             # Publish to event bus
@@ -242,14 +242,14 @@ class KarmicFeedbackEngine:
             return {
                 "status_code": response.status_code,
                 "response": response_data,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
         except Exception as e:
             logger.error(f"Error sending to STP bridge: {str(e)}")
             return {
                 "status": "error",
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
     
     def _log_transmission(self, payload: Dict[str, Any], result: Dict[str, Any]):
@@ -269,7 +269,7 @@ class KarmicFeedbackEngine:
             audit_entry = {
                 "transmission_id": str(uuid.uuid4()),
                 "payload_hash": payload_hash,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "payload_summary": {
                     "signal_id": payload.get("signal_id"),
                     "user_id": payload.get("user_id"),

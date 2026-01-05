@@ -2,6 +2,12 @@
 
 A comprehensive karma tracking system with unified event processing, file upload support, and multi-department integration capabilities.
 
+## System Status
+
+**PROJECT HANDOVER COMPLETE**
+
+As of January 5, 2026, this project has been formally handed over from Siddhesh (previous owner) to Task Bank / Master Chat (BHIV) as per the standard exit and system-protection protocol. All responsibilities, code, and knowledge have been transferred. No follow-up support is expected from the previous owner.
+
 ## Key Features
 
 - **Unified Event Gateway**: Single endpoint for all karma operations

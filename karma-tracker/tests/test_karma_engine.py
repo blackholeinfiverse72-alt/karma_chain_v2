@@ -195,4 +195,4 @@ if __name__ == "__main__":
     test_edge_cases()
     print("✓ Edge cases test passed")
     
-    print("\n🎉 All karma engine tests passed!")
+    print("\n[SUCCESS] All karma engine tests passed!")

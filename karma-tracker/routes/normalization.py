@@ -4,7 +4,7 @@ Normalization API Routes
 This module provides API endpoints for behavioral state normalization.
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, Depends
 import json
@@ -96,7 +96,7 @@ def normalize_single_state(request: NormalizeStateRequest) -> StateSchema:
         action_type=request.action_type,
         weight=module_weight,
         feedback_value=normalized_value,
-        timestamp=datetime.utcnow().isoformat()
+        timestamp=datetime.now(timezone.utc).isoformat()
     )
     
     return normalized_state
@@ -132,7 +132,7 @@ async def normalize_state(request: NormalizeStateRequest, _: bool = Depends(vali
             "timestamp": normalized_state.timestamp,
             "source": f"normalization_api_{normalized_state.module}",
             "status": "processed",
-            "created_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc)
         }
         
         # Insert into database
@@ -185,7 +185,7 @@ async def normalize_state_batch(request: NormalizeStateBatchRequest, _: bool = D
                 "timestamp": normalized_state.timestamp,
                 "source": f"normalization_api_{normalized_state.module}",
                 "status": "processed",
-                "created_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc)
             }
             
             # Insert into database
@@ -221,10 +221,10 @@ async def update_prarabdha(request: UpdatePrarabdhaRequest, _: bool = Depends(va
                 "context": request.context,
                 "metadata": request.metadata
             },
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "source": "normalization_api",
             "status": "processed",
-            "created_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc)
         }
         
         # Insert into database
@@ -236,7 +236,7 @@ async def update_prarabdha(request: UpdatePrarabdhaRequest, _: bool = Depends(va
             "previous_prarabdha": new_prarabdha - request.increment,
             "increment": request.increment,
             "new_prarabdha": new_prarabdha,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
     except Exception as e:

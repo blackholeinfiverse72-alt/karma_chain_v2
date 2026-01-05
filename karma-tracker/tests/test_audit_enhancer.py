@@ -248,4 +248,4 @@ if __name__ == "__main__":
     test_auto_export_telemetry_feed()
     test_verify_integrity()
     
-    print("\n🎉 All audit enhancer tests passed!")
+    print("\n[SUCCESS] All audit enhancer tests passed!")

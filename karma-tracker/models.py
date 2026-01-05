@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, validator
+from datetime import timezone
 from typing import Optional, Dict, Any, Literal
 from datetime import datetime
 from enum import Enum
@@ -215,7 +216,7 @@ class KarmaEvent(BaseModel):
     status: EventStatus = Field(default=EventStatus.PROCESSED, description="Event processing status")
     response_data: Optional[Dict[str, Any]] = Field(None, description="Response data from processing")
     error_message: Optional[str] = Field(None, max_length=1000, description="Error message if failed")
-    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow, description="Creation timestamp")
+    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), description="Creation timestamp")
     updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
 
     class Config:

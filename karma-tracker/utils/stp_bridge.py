@@ -6,7 +6,7 @@ Configurable bridge to forward karmic feedback signals to InsightFlow.
 import json
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 import requests
 from fastapi import HTTPException
@@ -85,7 +85,7 @@ class STPBridge:
             return {
                 "status": "skipped",
                 "message": "STP bridge is disabled",
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
         
         signal_id = signal.get("signal_id", str(uuid.uuid4()))
@@ -99,7 +99,7 @@ class STPBridge:
                 "transmission_id": str(uuid.uuid4()),
                 "source": "karmachain_feedback_engine",
                 "signal": signal,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "nonce": str(uuid.uuid4())  # For replay protection
             }
             
@@ -123,7 +123,7 @@ class STPBridge:
                 "signal_id": signal_id,
                 "transmission_id": payload["transmission_id"],
                 "response": response,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
             
         except Exception as e:
@@ -135,7 +135,7 @@ class STPBridge:
                 "status": "error",
                 "signal_id": signal_id,
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
     
     def _send_with_retry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -237,7 +237,7 @@ class STPBridge:
                 "transmission_id": str(uuid.uuid4()),
                 "source": "karmachain_feedback_engine",
                 "type": "health_check",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "nonce": str(uuid.uuid4())
             }
             
@@ -263,7 +263,7 @@ class STPBridge:
                 "endpoint": self.insightflow_health_endpoint,
                 "status_code": response.status_code,
                 "response_time": response.elapsed.total_seconds(),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
             
         except Exception as e:
@@ -272,7 +272,7 @@ class STPBridge:
                 "status": "unhealthy",
                 "endpoint": self.insightflow_health_endpoint,
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
 
     def _sign_payload(self, payload: Dict[str, Any]) -> str:

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Query, HTTPException, Response
 from typing import Optional
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from utils.karmic_analytics import (
     get_weekly_karma_trends,
     get_paap_punya_ratio_trends,
@@ -76,7 +76,7 @@ async def dharma_seva_flow_chart(
                 "status": "success",
                 "chart_generated": True,
                 "filepath": filepath,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
     except ImportError as e:
         raise HTTPException(status_code=501, detail=f"Chart generation not available: {str(e)}")
@@ -115,7 +115,7 @@ async def paap_punya_ratio_chart(
                 "status": "success",
                 "chart_generated": True,
                 "filepath": filepath,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
     except ImportError as e:
         raise HTTPException(status_code=501, detail=f"Chart generation not available: {str(e)}")
@@ -154,7 +154,7 @@ async def weekly_summary_export(
                 "status": "success",
                 "export_generated": True,
                 "filepath": filepath,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error exporting summary: {str(e)}")

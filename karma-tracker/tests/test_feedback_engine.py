@@ -4,7 +4,7 @@ Test suite for Karmic Feedback Engine
 import sys
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Add the project root to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -103,7 +103,7 @@ def test_stp_bridge_forward_signal():
             "penalty_score": 25,
             "behavioral_bias": -29.5
         },
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
     
     # Forward the signal
@@ -137,4 +137,4 @@ if __name__ == "__main__":
     test_stp_bridge_forward_signal()
     test_convenience_functions()
     
-    print("\n🎉 All feedback engine tests passed!")
+    print("\n[SUCCESS] All feedback engine tests passed!")

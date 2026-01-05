@@ -139,4 +139,4 @@ if __name__ == "__main__":
     test_live_karmic_metrics()
     test_analytics_with_sample_data()
     
-    print("\n🎉 All karmic analytics tests passed!")
+    print("\n[SUCCESS] All karmic analytics tests passed!")

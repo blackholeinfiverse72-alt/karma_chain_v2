@@ -338,7 +338,7 @@ Errors Encountered: {len(self.results['errors'])}
 
 async def main():
     """Main test execution"""
-    print("🚀 Starting KarmaChain Stress Test")
+    print("[START] Starting KarmaChain Stress Test")
     print(f"Testing with {CONCURRENT_USERS} concurrent users...")
     
     # Check if server is running
@@ -366,7 +366,7 @@ async def main():
     with open("stress_test_results.json", "w") as f:
         json.dump(results, f, indent=2, default=str)
     
-    print(f"📊 Detailed results saved to stress_test_results.json")
+    print(f"[SAVE] Detailed results saved to stress_test_results.json")
     
     # Performance recommendations
     if results.get("statistics", {}).get("success_rate", 0) < 95:

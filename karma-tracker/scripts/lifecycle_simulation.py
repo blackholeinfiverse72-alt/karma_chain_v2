@@ -10,7 +10,7 @@ import sys
 import os
 import random
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -61,7 +61,7 @@ def run_lifecycle_simulation(cycles=50, initial_users=10):
             },
             "role": random.choice(["learner", "volunteer", "seva", "guru"]),
             "rebirth_count": 0,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc)
         }
         users_col.insert_one(initial_user)
         initial_user_ids.append(user_id)
@@ -157,7 +157,7 @@ def run_lifecycle_simulation(cycles=50, initial_users=10):
         "total_rebirths": total_rebirths,
         "loka_distribution": loka_distribution,
         "final_active_users": len(active_users),
-        "simulation_completed": datetime.utcnow().isoformat()
+        "simulation_completed": datetime.now(timezone.utc).isoformat()
     }
     
     print("\n" + "=" * 60)
@@ -188,7 +188,7 @@ if __name__ == "__main__":
         
         # Optionally save results to a file
         import json
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         filename = f"lifecycle_simulation_results_{timestamp}.json"
         
         with open(filename, 'w') as f:

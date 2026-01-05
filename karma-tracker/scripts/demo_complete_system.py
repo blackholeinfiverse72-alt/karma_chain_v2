@@ -90,7 +90,7 @@ if __name__ == "__main__":
         show_system_status()
         
         print("\n" + "=" * 50)
-        print("🎉 Complete system demo finished!")
+        print("[SUCCESS] Complete system demo finished!")
         print("\nTo start the system, run:")
         print("  docker-compose up -d")
         print("\nOr for manual setup:")

@@ -361,6 +361,6 @@ if __name__ == "__main__":
     print(f"Test Results: {passed}/{len(tests)} tests passed")
     
     if passed == len(tests):
-        print("🎉 All Rnanubandhan Network Analyzer tests passed!")
+        print("[SUCCESS] All Rnanubandhan Network Analyzer tests passed!")
     else:
-        print("⚠️  Some tests failed.")
+        print("[WARNING] Some tests failed.")

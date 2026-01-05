@@ -1,10 +1,10 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from database import users_col
 from config import TOKEN_ATTRIBUTES
 
 def now_utc():
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 def apply_dridha_adridha_karma(user_doc, karma_type, value):
     """

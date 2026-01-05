@@ -1,11 +1,11 @@
 from database import transactions_col, users_col
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 logger = logging.getLogger(__name__)
 
 def now_utc():
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 def log_transaction(user_id, action, reward, intent, reward_tier, punishment_name=None):
     tx = {

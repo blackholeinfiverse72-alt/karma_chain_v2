@@ -130,4 +130,4 @@ if __name__ == "__main__":
     test_weighted_karma_score()
     test_karma_actions_dataset()
     
-    print("\n🎉 All tests passed!")
+    print("\n[SUCCESS] All tests passed!")

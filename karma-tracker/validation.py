@@ -3,7 +3,7 @@ Comprehensive input validation for KarmaChain API endpoints
 Provides robust validation for all user inputs with detailed error messages
 """
 
-from pydantic import BaseModel, validator, Field
+from pydantic import BaseModel, Field, field_validator, FieldValidationInfo
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import re
@@ -57,26 +57,30 @@ class ValidatedLogActionRequest(BaseModel):
     context: Optional[str] = Field(default=None, max_length=MAX_CONTEXT_LENGTH)
     metadata: Optional[Dict[str, Any]] = Field(default=None)
     
-    @validator('user_id')
-    def validate_user_id(cls, v):
+    @field_validator('user_id')
+    @classmethod
+    def validate_user_id(cls, v: str) -> str:
         if not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError('User ID must contain only alphanumeric characters, underscores, and hyphens')
         return v
     
-    @validator('action')
-    def validate_action(cls, v):
+    @field_validator('action')
+    @classmethod
+    def validate_action(cls, v: str) -> str:
         if v not in ALLOWED_ACTIONS:
             raise ValueError(f'Action must be one of: {", ".join(sorted(ALLOWED_ACTIONS))}')
         return v
     
-    @validator('context')
-    def validate_context(cls, v):
+    @field_validator('context')
+    @classmethod
+    def validate_context(cls, v: Optional[str]) -> Optional[str]:
         if v and len(v.strip()) == 0:
             raise ValueError('Context cannot be empty or whitespace only')
         return v
     
-    @validator('metadata')
-    def validate_metadata(cls, v):
+    @field_validator('metadata')
+    @classmethod
+    def validate_metadata(cls, v: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         if v:
             # Check metadata size (rough estimation)
             metadata_str = str(v)
@@ -90,14 +94,16 @@ class ValidatedRedeemRequest(BaseModel):
     token_type: str = Field(..., min_length=1, max_length=50)
     amount: float = Field(..., gt=0, le=1000000)  # Max 1M tokens
     
-    @validator('user_id')
-    def validate_user_id(cls, v):
+    @field_validator('user_id')
+    @classmethod
+    def validate_user_id(cls, v: str) -> str:
         if not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError('User ID must contain only alphanumeric characters, underscores, and hyphens')
         return v
     
-    @validator('token_type')
-    def validate_token_type(cls, v):
+    @field_validator('token_type')
+    @classmethod
+    def validate_token_type(cls, v: str) -> str:
         allowed_tokens = {
             "DharmaPoints", "SevaPoints", "PunyaTokens", "DridhaKarma",
             "AdridhaKarma", "SanchitaKarma", "PrarabdhaKarma"
@@ -116,21 +122,24 @@ class ValidatedKarmaEvent(BaseModel):
     source: Optional[str] = Field(default=None, max_length=100)
     metadata: Optional[Dict[str, Any]] = None
     
-    @validator('event_id')
-    def validate_event_id(cls, v):
+    @field_validator('event_id')
+    @classmethod
+    def validate_event_id(cls, v: str) -> str:
         if not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError('Event ID must contain only alphanumeric characters, underscores, and hyphens')
         return v
     
-    @validator('user_id')
-    def validate_user_id(cls, v):
+    @field_validator('user_id')
+    @classmethod
+    def validate_user_id(cls, v: str) -> str:
         if not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError('User ID must contain only alphanumeric characters, underscores, and hyphens')
         return v
     
-    @validator('data')
-    def validate_event_data(cls, v, values):
-        event_type = values.get('event_type')
+    @field_validator('data')
+    @classmethod
+    def validate_event_data(cls, v: Dict[str, Any], info: FieldValidationInfo) -> Dict[str, Any]:
+        event_type = info.data.get('event_type') if info and info.data else None
         if event_type == EventType.LIFE_EVENT:
             if 'action_type' not in v:
                 raise ValueError('Life event must include action_type')
@@ -138,13 +147,11 @@ class ValidatedKarmaEvent(BaseModel):
                 raise ValueError('Life event must include description')
             if len(v.get('description', '')) > MAX_DESCRIPTION_LENGTH:
                 raise ValueError(f'Description exceeds maximum length of {MAX_DESCRIPTION_LENGTH}')
-        
         elif event_type == EventType.ATONEMENT:
             if 'action_id' not in v:
                 raise ValueError('Atonement must include action_id')
             if 'severity' in v and v['severity'] not in [s.value for s in SeverityLevel]:
                 raise ValueError(f'Severity must be one of: {", ".join([s.value for s in SeverityLevel])}')
-        
         return v
 
 class ValidatedAtonementRequest(BaseModel):
@@ -155,21 +162,24 @@ class ValidatedAtonementRequest(BaseModel):
     amount: Optional[float] = Field(default=None, gt=0)
     proof_text: Optional[str] = Field(default=None, max_length=2000)
     
-    @validator('user_id')
-    def validate_user_id(cls, v):
+    @field_validator('user_id')
+    @classmethod
+    def validate_user_id(cls, v: str) -> str:
         if not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError('User ID must contain only alphanumeric characters, underscores, and hyphens')
         return v
     
-    @validator('atonement_type')
-    def validate_atonement_type(cls, v):
+    @field_validator('atonement_type')
+    @classmethod
+    def validate_atonement_type(cls, v: str) -> str:
         allowed_types = {"Jap", "Tap", "Bhakti", "Daan", "Seva", "Meditation"}
         if v not in allowed_types:
             raise ValueError(f'Atonement type must be one of: {", ".join(sorted(allowed_types))}')
         return v
     
-    @validator('proof_text')
-    def validate_proof_text(cls, v):
+    @field_validator('proof_text')
+    @classmethod
+    def validate_proof_text(cls, v: Optional[str]) -> Optional[str]:
         if v and len(v.strip()) == 0:
             raise ValueError('Proof text cannot be empty or whitespace only')
         return v
@@ -180,8 +190,9 @@ class ValidatedFileUpload(BaseModel):
     content_type: str
     size: int
     
-    @validator('filename')
-    def validate_filename(cls, v):
+    @field_validator('filename')
+    @classmethod
+    def validate_filename(cls, v: str) -> str:
         if not v or len(v.strip()) == 0:
             raise ValueError('Filename cannot be empty')
         
@@ -192,14 +203,16 @@ class ValidatedFileUpload(BaseModel):
         
         return v
     
-    @validator('size')
-    def validate_file_size(cls, v):
+    @field_validator('size')
+    @classmethod
+    def validate_file_size(cls, v: int) -> int:
         if v > MAX_FILE_SIZE:
             raise ValueError(f'File size exceeds maximum allowed size of {MAX_FILE_SIZE / (1024*1024):.1f}MB')
         return v
     
-    @validator('content_type')
-    def validate_content_type(cls, v):
+    @field_validator('content_type')
+    @classmethod
+    def validate_content_type(cls, v: str) -> str:
         allowed_content_types = {
             'text/plain', 'application/pdf', 'image/jpeg', 'image/jpg', 
             'image/png', 'image/gif', 'application/msword',

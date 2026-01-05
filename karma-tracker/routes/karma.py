@@ -99,7 +99,7 @@ async def get_karma_profile(user_id: str, _: bool = Depends(validation_dependenc
             "event_id": event_id,
             "event_type": "karma_profile_request",
             "data": {"user_id": user_id},
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "source": "karma_api",
             "status": "processing"
         })
@@ -160,7 +160,7 @@ async def get_karma_profile(user_id: str, _: bool = Depends(validation_dependenc
                         "net_karma": net_karma,  # This is a float
                         "weighted_karma_score": weighted_karma_score
                     },
-                    "updated_at": datetime.utcnow()
+                    "updated_at": datetime.now(timezone.utc)
                 }
             }
         )
@@ -180,7 +180,7 @@ async def get_karma_profile(user_id: str, _: bool = Depends(validation_dependenc
             },
             corrective_guidance=corrective_guidance,
             module_scores=module_scores,
-            last_updated=datetime.utcnow()
+            last_updated=datetime.now(timezone.utc)
         )
         
     except HTTPException as e:
@@ -192,7 +192,7 @@ async def get_karma_profile(user_id: str, _: bool = Depends(validation_dependenc
                     "$set": {
                         "status": "failed",
                         "error_message": e.detail if hasattr(e, 'detail') else str(e),
-                        "updated_at": datetime.utcnow()
+                        "updated_at": datetime.now(timezone.utc)
                     }
                 }
             )
@@ -207,7 +207,7 @@ async def get_karma_profile(user_id: str, _: bool = Depends(validation_dependenc
                     "$set": {
                         "status": "failed",
                         "error_message": msg,
-                        "updated_at": datetime.utcnow()
+                        "updated_at": datetime.now(timezone.utc)
                     }
                 }
             )
@@ -233,7 +233,7 @@ async def log_action(req: LogActionRequest, _: bool = Depends(validation_depende
             "event_id": event_id,
             "event_type": "log_action_request",
             "data": req.dict(),
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "source": "karma_api",
             "status": "processing"
         })
@@ -315,7 +315,7 @@ async def log_action(req: LogActionRequest, _: bool = Depends(validation_depende
             "value": reward_value,
             "intent": intent,
             "tier": tier,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "context": req.context,
             "metadata": req.metadata
         })
@@ -345,7 +345,7 @@ async def log_action(req: LogActionRequest, _: bool = Depends(validation_depende
                         "merit_score": merit_score,
                         "karma_impact": karma_evaluation["net_karma"]
                     },
-                    "updated_at": datetime.utcnow()
+                    "updated_at": datetime.now(timezone.utc)
                 }
             }
         )
@@ -376,7 +376,7 @@ async def log_action(req: LogActionRequest, _: bool = Depends(validation_depende
                     "$set": {
                         "status": "failed",
                         "error_message": e.detail if hasattr(e, 'detail') else str(e),
-                        "updated_at": datetime.utcnow()
+                        "updated_at": datetime.now(timezone.utc)
                     }
                 }
             )
@@ -391,7 +391,7 @@ async def log_action(req: LogActionRequest, _: bool = Depends(validation_depende
                     "$set": {
                         "status": "failed",
                         "error_message": msg,
-                        "updated_at": datetime.utcnow()
+                        "updated_at": datetime.now(timezone.utc)
                     }
                 }
             )
@@ -417,7 +417,7 @@ async def submit_atonement(req: AtonementSubmissionRequest, _: bool = Depends(va
             "event_id": event_id,
             "event_type": "atonement_submission_request",
             "data": req.dict(),
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "source": "karma_api",
             "status": "processing"
         })
@@ -482,7 +482,7 @@ async def submit_atonement(req: AtonementSubmissionRequest, _: bool = Depends(va
             "value": reward_value,
             "intent": "atonement",
             "tier": "atonement",
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "context": f"Atonement type: {req.atonement_type}",
             "metadata": {
                 "plan_id": req.plan_id,
@@ -515,7 +515,7 @@ async def submit_atonement(req: AtonementSubmissionRequest, _: bool = Depends(va
                         "paap_reduction": paap_reduction,
                         "new_role": new_role
                     },
-                    "updated_at": datetime.utcnow()
+                    "updated_at": datetime.now(timezone.utc)
                 }
             }
         )
@@ -541,7 +541,7 @@ async def submit_atonement(req: AtonementSubmissionRequest, _: bool = Depends(va
                     "$set": {
                         "status": "failed",
                         "error_message": e.detail if hasattr(e, 'detail') else str(e),
-                        "updated_at": datetime.utcnow()
+                        "updated_at": datetime.now(timezone.utc)
                     }
                 }
             )
@@ -556,7 +556,7 @@ async def submit_atonement(req: AtonementSubmissionRequest, _: bool = Depends(va
                     "$set": {
                         "status": "failed",
                         "error_message": msg,
-                        "updated_at": datetime.utcnow()
+                        "updated_at": datetime.now(timezone.utc)
                     }
                 }
             )

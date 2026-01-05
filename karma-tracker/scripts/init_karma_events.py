@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""
+'''
 Initialize the karma_events collection with proper indexes and schema validation.
-"""
+'''
 
 import sys
 import os
@@ -9,12 +9,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database import karma_events_col, get_db
 from pymongo import IndexModel, ASCENDING, DESCENDING
-from datetime import datetime
+from datetime import datetime, timezone
 
 def init_karma_events_collection():
     """Initialize karma_events collection with indexes and validation"""
     
-    print("🚀 Initializing karma_events collection...")
+    print("[INIT] Initializing karma_events collection...")
     
     # Create indexes for efficient querying
     indexes = [
@@ -30,11 +30,11 @@ def init_karma_events_collection():
     try:
         # Create indexes
         karma_events_col.create_indexes(indexes)
-        print("✅ Indexes created successfully")
+        print("[OK] Indexes created successfully")
         
         # Get collection stats
         stats = karma_events_col.database.command("collStats", "karma_events")
-        print(f"📊 Collection stats: {stats['count']} documents, {stats['size']} bytes")
+        print(f"[STAT] Collection stats: {stats['count']} documents, {stats['size']} bytes")
         
         # Create a sample document to test
         sample_event = {
@@ -44,15 +44,15 @@ def init_karma_events_collection():
                 "message": "Karma events collection initialized",
                 "version": "1.0.0"
             },
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "source": "system_initializer",
             "status": "processed",
             "response_data": {
                 "status": "success",
                 "message": "Collection ready for use"
             },
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         
         # Insert sample document (upsert to avoid duplicates)
@@ -63,28 +63,28 @@ def init_karma_events_collection():
         )
         
         if result.upserted_id:
-            print("✅ Sample initialization event inserted")
+            print("[OK] Sample initialization event inserted")
         else:
-            print("ℹ️ Sample initialization event already exists")
+            print("[INFO] Sample initialization event already exists")
         
-        print("\n🎉 karma_events collection initialization complete!")
+        print("\n[SUCCESS] karma_events collection initialization complete!")
         
         # Show available indexes
         indexes_info = karma_events_col.list_indexes()
-        print("\n📋 Available indexes:")
+        print("\n[INDEX] Available indexes:")
         for index in indexes_info:
             print(f"  - {index['name']}: {index['key']}")
         
         return True
         
     except Exception as e:
-        print(f"❌ Error initializing collection: {e}")
+        print(f"[ERROR] Error initializing collection: {e}")
         return False
 
 def verify_collection_setup():
     """Verify the collection is properly set up"""
     
-    print("\n🔍 Verifying collection setup...")
+    print("\n[VER] Verifying collection setup...")
     
     try:
         # Test basic operations
@@ -92,49 +92,49 @@ def verify_collection_setup():
             "event_id": "test-verify-001",
             "event_type": "test_event",
             "data": {"test": "data"},
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "source": "verification_script",
             "status": "processed",
-            "created_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc)
         }
         
         # Insert test document
         karma_events_col.insert_one(test_event)
-        print("✅ Test document inserted")
+        print("[OK] Test document inserted")
         
         # Query test document
         found = karma_events_col.find_one({"event_id": "test-verify-001"})
         if found:
-            print("✅ Test document retrieved successfully")
+            print("[OK] Test document retrieved successfully")
         else:
-            print("❌ Test document not found")
+            print("[ERROR] Test document not found")
             return False
         
         # Clean up test document
         karma_events_col.delete_one({"event_id": "test-verify-001"})
-        print("✅ Test document cleaned up")
+        print("[OK] Test document cleaned up")
         
-        print("✅ Collection verification complete!")
+        print("[OK] Collection verification complete!")
         return True
         
     except Exception as e:
-        print(f"❌ Verification failed: {e}")
+        print(f"[ERROR] Verification failed: {e}")
         return False
 
 if __name__ == "__main__":
-    print("🛠️ Karma Events Collection Setup")
+    print("[SETUP] Karma Events Collection Setup")
     print("=" * 40)
     
     # Initialize collection
     if init_karma_events_collection():
         # Verify setup
         if verify_collection_setup():
-            print("\n🎉 All systems ready! The karma_events collection is now available.")
-            print("\n💡 Usage:")
+            print("\n[READY] All systems ready! The karma_events collection is now available.")
+            print("\n[INFO] Usage:")
             print("   from database import karma_events_col")
             print("   karma_events_col.insert_one({...})")
         else:
-            print("\n⚠️ Collection initialized but verification failed.")
+            print("\n[WARNING] Collection initialized but verification failed.")
     else:
-        print("\n❌ Collection initialization failed.")
+        print("\n[ERROR] Collection initialization failed.")
         sys.exit(1)

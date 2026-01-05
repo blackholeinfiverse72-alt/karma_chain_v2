@@ -7,7 +7,7 @@ This module provides API endpoints for the karmic lifecycle engine.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from utils.karma_lifecycle import (
     get_prarabdha_counter, 
@@ -97,7 +97,7 @@ async def get_prarabdha(user_id: str):
         return PrarabdhaResponse(
             user_id=user_id,
             prarabdha=prarabdha,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.now(timezone.utc).isoformat()
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -120,7 +120,7 @@ async def update_prarabdha(request: PrarabdhaRequest):
         return PrarabdhaResponse(
             user_id=request.user_id,
             prarabdha=new_prarabdha,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.now(timezone.utc).isoformat()
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -146,7 +146,7 @@ async def check_death_threshold(request: DeathThresholdRequest):
             death_threshold=details["death_threshold"],
             threshold_reached=details["threshold_reached"],
             details=details,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.now(timezone.utc).isoformat()
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -172,7 +172,7 @@ async def process_death(request: DeathEventRequest):
             loka=result["loka"],
             description=result["description"],
             inheritance=result["inheritance"],
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.now(timezone.utc).isoformat()
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -198,7 +198,7 @@ async def process_rebirth_endpoint(request: RebirthRequest):
             new_user_id=result["new_user_id"],
             inheritance=result["inheritance"],
             starting_level=result["starting_level"],
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.now(timezone.utc).isoformat()
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -252,7 +252,7 @@ async def simulate_lifecycle_cycles(request: SimulateCycleRequest):
                 },
                 "role": random.choice(["learner", "volunteer", "seva", "guru"]),
                 "rebirth_count": 0,
-                "created_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc)
             }
             users_col.insert_one(initial_user)
             initial_users.append(user_id)
@@ -333,7 +333,7 @@ async def simulate_lifecycle_cycles(request: SimulateCycleRequest):
             status="simulation_completed",
             cycles_simulated=request.cycles,
             results=results,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             statistics=statistics
         )
     except Exception as e:

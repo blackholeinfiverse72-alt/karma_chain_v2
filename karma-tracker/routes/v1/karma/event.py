@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, Union
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 # Import database and models
@@ -53,17 +53,17 @@ async def unified_event_endpoint(request: UnifiedEventRequest):
     
     # Set default timestamp if not provided
     if not request.timestamp:
-        request.timestamp = datetime.utcnow()
+        request.timestamp = datetime.now(timezone.utc)
     
     # Initialize database event record
     db_event = KarmaEvent(
         event_id=event_id,
         event_type=request.type,
         data=request.data,
-        timestamp=request.timestamp or datetime.utcnow(),
+        timestamp=request.timestamp or datetime.now(timezone.utc),
         source=request.source,
         status="pending",
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     
     try:
@@ -92,7 +92,7 @@ async def unified_event_endpoint(request: UnifiedEventRequest):
         # Update database with success
         db_event.status = "processed"
         db_event.response_data = response.dict()
-        db_event.updated_at = datetime.utcnow()
+        db_event.updated_at = datetime.now(timezone.utc)
         karma_events_col.insert_one(db_event.dict())
         
         return response
@@ -101,14 +101,14 @@ async def unified_event_endpoint(request: UnifiedEventRequest):
         # Update database with HTTP error
         db_event.status = "failed"
         db_event.error_message = str(e)
-        db_event.updated_at = datetime.utcnow()
+        db_event.updated_at = datetime.now(timezone.utc)
         karma_events_col.insert_one(db_event.dict())
         raise
     except Exception as e:
         # Update database with unexpected error
         db_event.status = "failed"
         db_event.error_message = f"Internal error: {str(e)}"
-        db_event.updated_at = datetime.utcnow()
+        db_event.updated_at = datetime.now(timezone.utc)
         karma_events_col.insert_one(db_event.dict())
         
         raise HTTPException(
@@ -141,7 +141,7 @@ async def _handle_life_event(request: UnifiedEventRequest, event_id: str) -> Uni
             event_type="life_event",
             message="Life event logged successfully",
             data=result,
-            timestamp=request.timestamp or datetime.utcnow(),
+            timestamp=request.timestamp or datetime.now(timezone.utc),
             routing_info={
                 "internal_endpoint": "/v1/karma/log-action/",
                 "mapped_from": "life_event"
@@ -180,7 +180,7 @@ async def _handle_atonement(request: UnifiedEventRequest, event_id: str) -> Unif
             event_type="atonement",
             message="Atonement submitted successfully",
             data=result,
-            timestamp=request.timestamp or datetime.utcnow(),
+            timestamp=request.timestamp or datetime.now(timezone.utc),
             routing_info={
                 "internal_endpoint": "/v1/karma/atonement/submit",
                 "mapped_from": "atonement"
@@ -214,7 +214,7 @@ async def _handle_appeal(request: UnifiedEventRequest, event_id: str) -> Unified
             event_type="appeal",
             message="Appeal submitted successfully",
             data=result,
-            timestamp=request.timestamp or datetime.utcnow(),
+            timestamp=request.timestamp or datetime.now(timezone.utc),
             routing_info={
                 "internal_endpoint": "/v1/karma/appeal/",
                 "mapped_from": "appeal"
@@ -251,7 +251,7 @@ async def _handle_death_event(request: UnifiedEventRequest, event_id: str) -> Un
                 event_type="death_event",
                 message="Death event processed successfully (threshold not reached)",
                 data=result,
-                timestamp=request.timestamp or datetime.utcnow(),
+                timestamp=request.timestamp or datetime.now(timezone.utc),
                 routing_info={
                     "internal_endpoint": "/v1/karma/death/event",
                     "mapped_from": "death_event",
@@ -267,7 +267,7 @@ async def _handle_death_event(request: UnifiedEventRequest, event_id: str) -> Un
                 event_type="death_event",
                 message="Death event processed successfully (threshold reached)",
                 data=result,
-                timestamp=request.timestamp or datetime.utcnow(),
+                timestamp=request.timestamp or datetime.now(timezone.utc),
                 routing_info={
                     "internal_endpoint": "karma_lifecycle_engine",
                     "mapped_from": "death_event",
@@ -295,7 +295,7 @@ async def _handle_stats_request(request: UnifiedEventRequest, event_id: str) -> 
             event_type="stats_request",
             message="User statistics retrieved successfully",
             data=result,
-            timestamp=request.timestamp or datetime.utcnow(),
+            timestamp=request.timestamp or datetime.now(timezone.utc),
             routing_info={
                 "internal_endpoint": "/v1/karma/stats/{user_id}",
                 "mapped_from": "stats_request"
@@ -348,10 +348,10 @@ async def unified_event_with_file(
             "has_file": bool(proof_file),
             "file_name": proof_file.filename if proof_file else None
         },
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         source="unified_event_with_file",
         status="pending",
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     
     try:
@@ -405,7 +405,7 @@ async def unified_event_with_file(
         # Update database with success
         db_event.status = "processed"
         db_event.response_data = result
-        db_event.updated_at = datetime.utcnow()
+        db_event.updated_at = datetime.now(timezone.utc)
         karma_events_col.insert_one(db_event.dict())
         
         return UnifiedEventResponse(
@@ -413,7 +413,7 @@ async def unified_event_with_file(
             event_type=event_type,
             message="Atonement with file submitted successfully",
             data=result,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             routing_info={
                 "internal_endpoint": "/v1/karma/atonement/submit-with-file",
                 "mapped_from": event_type
@@ -424,13 +424,13 @@ async def unified_event_with_file(
         # Update database with HTTP error
         db_event.status = "failed"
         db_event.error_message = str(e)
-        db_event.updated_at = datetime.utcnow()
+        db_event.updated_at = datetime.now(timezone.utc)
         karma_events_col.insert_one(db_event.dict())
         raise
     except Exception as e:
         # Update database with unexpected error
         db_event.status = "failed"
         db_event.error_message = f"Internal error: {str(e)}"
-        db_event.updated_at = datetime.utcnow()
+        db_event.updated_at = datetime.now(timezone.utc)
         karma_events_col.insert_one(db_event.dict())
         raise HTTPException(status_code=500, detail=f"Error processing {event_type}: {str(e)}")

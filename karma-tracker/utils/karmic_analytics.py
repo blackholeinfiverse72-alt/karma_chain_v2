@@ -7,7 +7,7 @@ Provides trend analysis, visualization, and export capabilities.
 import os
 import json
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional, Tuple
 
 # Conditional import for matplotlib
@@ -53,7 +53,7 @@ class KarmicAnalytics:
             Dictionary with weekly trends data
         """
         # Calculate date range
-        end_date = datetime.utcnow()
+        end_date = datetime.now(timezone.utc)
         start_date = end_date - timedelta(weeks=weeks)
         
         # Query karma events for the date range
@@ -111,7 +111,7 @@ class KarmicAnalytics:
             Dictionary with ratio trends data
         """
         # Calculate date range
-        end_date = datetime.utcnow()
+        end_date = datetime.now(timezone.utc)
         start_date = end_date - timedelta(weeks=weeks)
         
         # Query karma events for the date range
@@ -215,7 +215,7 @@ class KarmicAnalytics:
         
         # Determine filename
         if filename is None:
-            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             filename = f"dharma_seva_flow_{timestamp}.png"
             
         # Full path
@@ -275,7 +275,7 @@ class KarmicAnalytics:
         
         # Determine filename
         if filename is None:
-            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             filename = f"paap_punya_ratio_{timestamp}.png"
             
         # Full path
@@ -350,7 +350,7 @@ class KarmicAnalytics:
         
         # Determine filename
         if filename is None:
-            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             filename = f"weekly_summary_{timestamp}.csv"
             
         # Full path
@@ -383,7 +383,7 @@ class KarmicAnalytics:
         total_users = users_col.count_documents({})
         
         # Get recent karma events (last 24 hours)
-        yesterday = datetime.utcnow() - timedelta(days=1)
+        yesterday = datetime.now(timezone.utc) - timedelta(days=1)
         recent_events = list(karma_events_col.find({
             "timestamp": {"$gte": yesterday}
         }))
@@ -404,7 +404,7 @@ class KarmicAnalytics:
                 avg_net_karma = sum(float(k) if isinstance(k, (int, float)) else 0.0 for k in net_karmas) / len(net_karmas)
         
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "total_users": total_users,
             "events_last_24h": total_events,
             "dharma_points_last_24h": total_dharma,

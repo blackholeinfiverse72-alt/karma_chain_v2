@@ -377,7 +377,7 @@ def simulate_lifecycle_cycles(cycles: int = 50, initial_users: int = 10) -> Dict
             },
             "role": random.choice(["learner", "volunteer", "seva", "guru"]),
             "rebirth_count": 0,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc)
         }
         users_col.insert_one(initial_user)
         initial_user_ids.append(user_id)
@@ -462,7 +462,7 @@ def simulate_lifecycle_cycles(cycles: int = 50, initial_users: int = 10) -> Dict
         "total_rebirths": total_rebirths,
         "loka_distribution": loka_distribution,
         "final_active_users": len(active_users),
-        "simulation_completed": datetime.utcnow().isoformat()
+        "simulation_completed": datetime.now(timezone.utc).isoformat()
     }
     
     return {

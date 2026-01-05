@@ -8,7 +8,7 @@ import hashlib
 import json
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
 from database import karma_events_col
 import logging
@@ -62,7 +62,7 @@ class AuditEnhancer:
         enhanced_entry["_block_ref"] = {
             "ledger_index": ledger_index,
             "previous_hash": previous_hash,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "entry_hash": self.hash_ledger_entry(entry)
         }
         return enhanced_entry
@@ -100,7 +100,7 @@ class AuditEnhancer:
             List of ledger entries for the specified date
         """
         if date is None:
-            date = datetime.utcnow()
+            date = datetime.now(timezone.utc)
             
         # Get start and end of the day
         start_of_day = date.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -127,7 +127,7 @@ class AuditEnhancer:
             Dict containing the snapshot with cryptographic proofs
         """
         if date is None:
-            date = datetime.utcnow()
+            date = datetime.now(timezone.utc)
             
         # Get entries for the day
         entries = self.get_daily_entries(date)
@@ -149,7 +149,7 @@ class AuditEnhancer:
         snapshot = {
             "snapshot_id": hashlib.sha256(f"{date.isoformat()}{merkle_root}".encode()).hexdigest(),
             "date": date.date().isoformat(),
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "entry_count": len(enhanced_entries),
             "merkle_root": merkle_root,
             "entries": enhanced_entries,
@@ -211,7 +211,7 @@ class AuditEnhancer:
         
         # Determine filename
         if filename is None:
-            date_str = (date or datetime.utcnow()).date().isoformat()
+            date_str = (date or datetime.now(timezone.utc)).date().isoformat()
             filename = f"daily_snapshot_{date_str}.json"
             
         # Full path

@@ -9,7 +9,7 @@ broadcasting feedback events, lifecycle events, and analytics events.
 import asyncio
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 import sys
 import os
 
@@ -49,10 +49,10 @@ async def run_unreal_simulation():
     
     # Process events for 10 seconds to allow broadcasting
     logger.info("Broadcasting events to Unreal clients...")
-    start_time = datetime.utcnow()
+    start_time = datetime.now(timezone.utc)
     
     # Process events for 10 seconds
-    while (datetime.utcnow() - start_time).seconds < 10:
+    while (datetime.now(timezone.utc) - start_time).seconds < 10:
         await broadcast_manager.process_queue()
         await asyncio.sleep(0.5)
     
@@ -67,7 +67,7 @@ async def run_unreal_simulation():
     
     # Export simulation log
     log_data = {
-        "simulation_run": datetime.utcnow().isoformat(),
+        "simulation_run": datetime.now(timezone.utc).isoformat(),
         "num_players": 10,
         "events": simulation_log,
         "summary": {
@@ -167,9 +167,9 @@ if __name__ == "__main__":
     success = asyncio.run(validate_unreal_integration())
     
     if success:
-        logger.info("\n🎉 Unreal Engine Integration Validation SUCCESSFUL!")
+        logger.info("\n[SUCCESS] Unreal Engine Integration Validation SUCCESSFUL!")
         logger.info("   The KarmaChain system is ready for Unreal Engine integration.")
         sys.exit(0)
     else:
-        logger.error("\n💥 Unreal Engine Integration Validation FAILED!")
+        logger.error("\n[ERROR] Unreal Engine Integration Validation FAILED!")
         sys.exit(1)

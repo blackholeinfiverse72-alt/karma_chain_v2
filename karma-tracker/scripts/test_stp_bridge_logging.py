@@ -9,7 +9,7 @@ import os
 import json
 import time
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Add the parent directory to the Python path so we can import modules
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
@@ -69,7 +69,7 @@ def test_stp_bridge_security_features():
             "user_id": "test-user-001",
             "action": "completing_lessons",
             "karma_value": 5,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
         result = stp_bridge.forward_signal(test_signal)

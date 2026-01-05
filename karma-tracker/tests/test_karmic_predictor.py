@@ -174,4 +174,4 @@ if __name__ == "__main__":
     test_behavioral_trends_prediction()
     test_sample_user_flows()
     
-    print("\n🎉 All karmic predictor tests passed!")
+    print("\n[SUCCESS] All karmic predictor tests passed!")

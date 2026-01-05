@@ -9,7 +9,7 @@ import asyncio
 import json
 import logging
 import websockets
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, asdict
 
@@ -51,7 +51,7 @@ class UnrealBroadcastManager:
         connection = ClientConnection(
             websocket=websocket,
             client_id=client_id,
-            connected_at=datetime.utcnow().isoformat(),
+            connected_at=datetime.now(timezone.utc).isoformat(),
             subscriptions=subscriptions
         )
         
@@ -62,7 +62,7 @@ class UnrealBroadcastManager:
         welcome_msg = {
             "type": "welcome",
             "client_id": client_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "message": "Connected to KarmaChain Unreal Broadcast Service"
         }
         await websocket.send(json.dumps(welcome_msg))
@@ -125,7 +125,7 @@ class UnrealBroadcastManager:
         
         async def handler(websocket, path):
             # Extract client ID from path or generate one
-            client_id = path.strip("/") if path and path != "/" else f"client_{int(datetime.utcnow().timestamp())}"
+            client_id = path.strip("/") if path and path != "/" else f"client_{int(datetime.now(timezone.utc).timestamp())}"
             
             # Register client
             await self.register_client(websocket, client_id)
@@ -179,7 +179,7 @@ class UnrealBroadcastManager:
             for j in range(num_events):
                 event_type = random.choice(event_types)
                 event_id = str(uuid.uuid4())
-                timestamp = datetime.utcnow().isoformat()
+                timestamp = datetime.now(timezone.utc).isoformat()
                 
                 # Generate event-specific data
                 if event_type == "life_event":

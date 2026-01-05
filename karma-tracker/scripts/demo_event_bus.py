@@ -19,7 +19,7 @@ from utils.event_bus import (
 
 def feedback_handler(message: EventBusMessage):
     """Handle karma feedback events"""
-    print(f"📬 Feedback Event Received:")
+    print(f"[FEED] Feedback Event Received:")
     print(f"   ID: {message.message_id}")
     print(f"   User: {message.payload.get('user_id', 'Unknown')}")
     print(f"   Type: {message.payload.get('type', 'Unknown')}")
@@ -28,7 +28,7 @@ def feedback_handler(message: EventBusMessage):
 
 def lifecycle_handler(message: EventBusMessage):
     """Handle karma lifecycle events"""
-    print(f"🔄 Lifecycle Event Received:")
+    print(f"[LIFE] Lifecycle Event Received:")
     print(f"   ID: {message.message_id}")
     print(f"   Event: {message.payload.get('event_type', 'Unknown')}")
     print(f"   User: {message.payload.get('user_id', 'Unknown')}")
@@ -37,25 +37,25 @@ def lifecycle_handler(message: EventBusMessage):
 
 def analytics_handler(message: EventBusMessage):
     """Handle karma analytics events"""
-    print(f"📊 Analytics Event Received:")
+    print(f"[ANAL] Analytics Event Received:")
     print(f"   ID: {message.message_id}")
     print(f"   Report: {message.payload.get('report_type', 'Unknown')}")
     print(f"   Time: {message.timestamp}")
     print()
 
 def main():
-    print("🚀 KarmaChain Real-Time Event Bus Demo")
+    print("[START] KarmaChain Real-Time Event Bus Demo")
     print("=" * 50)
     
     # Subscribe to all channels
-    print("🔌 Subscribing to event channels...")
+    print("[SUB] Subscribing to event channels...")
     subscribe_to_karma_feedback(feedback_handler)
     subscribe_to_karma_lifecycle(lifecycle_handler)
     subscribe_to_karma_analytics(analytics_handler)
     print("✅ Subscriptions established\n")
     
     # Demonstrate publishing events
-    print("📨 Publishing sample events...\n")
+    print("[PUB] Publishing sample events...\n")
     
     # Publish a feedback event
     print("1. Publishing karma feedback event...")
@@ -114,7 +114,7 @@ def main():
     time.sleep(1)
     
     print("✅ Demo completed successfully!")
-    print("\n💡 The event bus is now ready for real-time, multiplayer-ready communication!")
+    print("\n[INFO] The event bus is now ready for real-time, multiplayer-ready communication!")
 
 if __name__ == "__main__":
     main()

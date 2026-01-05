@@ -125,4 +125,4 @@ if __name__ == "__main__":
     test_normalize_single_state_invalid_module()
     print("✓ Invalid module normalization test passed")
     
-    print("\n🎉 All normalization tests passed!")
+    print("\n[SUCCESS] All normalization tests passed!")

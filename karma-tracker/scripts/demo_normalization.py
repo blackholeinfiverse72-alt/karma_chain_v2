@@ -5,7 +5,7 @@ Test script for Behavioral State Normalization API
 import requests
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Base URL for the API
 BASE_URL = "http://localhost:8000/api/v1"
@@ -25,7 +25,7 @@ def test_normalize_state():
         },
         "metadata": {
             "user_id": "user_finance_001",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     }
     
@@ -40,7 +40,7 @@ def test_normalize_state():
         },
         "metadata": {
             "user_id": "user_gurukul_001",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     }
     
@@ -200,9 +200,9 @@ if __name__ == "__main__":
         print(f"Passed: {passed}/{total}")
         
         if passed == total:
-            print("🎉 All normalization tests passed!")
+            print("[SUCCESS] All normalization tests passed!")
         else:
-            print("⚠️  Some normalization tests failed or were skipped.")
+            print("[WARNING] Some normalization tests failed or were skipped.")
             
     except Exception as e:
         print(f"Error running tests: {e}")

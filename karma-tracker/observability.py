@@ -6,7 +6,7 @@ import logging
 import json
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from functools import wraps
 import asyncio
@@ -131,7 +131,7 @@ class KarmaChainLogger:
                        request_data: Optional[Dict[str, Any]] = None):
         """Log API request"""
         entry = LogEntry(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             level="INFO",
             event_type=EventType.API_REQUEST.value,
             component="api",
@@ -155,7 +155,7 @@ class KarmaChainLogger:
                         response_time: float, response_data: Optional[Dict[str, Any]] = None):
         """Log API response"""
         entry = LogEntry(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             level="INFO",
             event_type=EventType.API_RESPONSE.value,
             component="api",
@@ -186,7 +186,7 @@ class KarmaChainLogger:
                             user_id: Optional[str] = None):
         """Log validation error"""
         entry = LogEntry(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             level="WARNING",
             event_type=EventType.VALIDATION_ERROR.value,
             component="validation",
@@ -216,7 +216,7 @@ class KarmaChainLogger:
                         additional_data: Optional[Dict[str, Any]] = None):
         """Log karma action"""
         entry = LogEntry(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             level="INFO",
             event_type=EventType.KARMA_ACTION.value,
             component="karma_engine",
@@ -243,7 +243,7 @@ class KarmaChainLogger:
                      paap_reduction: float, success: bool = True):
         """Log atonement completion"""
         entry = LogEntry(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             level="INFO" if success else "ERROR",
             event_type=EventType.ATONEMENT.value,
             component="atonement",
@@ -271,7 +271,7 @@ class KarmaChainLogger:
                         user_id: Optional[str] = None):
         """Log system error"""
         entry = LogEntry(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             level="ERROR",
             event_type=EventType.SYSTEM_ERROR.value,
             component="system",
@@ -298,7 +298,7 @@ class KarmaChainLogger:
                           additional_data: Optional[Dict[str, Any]] = None):
         """Log security event"""
         entry = LogEntry(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             level="WARNING" if severity in ["low", "medium"] else "ERROR",
             event_type=EventType.SECURITY_EVENT.value,
             component="security",
@@ -324,7 +324,7 @@ class KarmaChainLogger:
                               user_id: Optional[str] = None):
         """Log performance metric"""
         entry = LogEntry(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             level="INFO",
             event_type=EventType.PERFORMANCE_METRIC.value,
             component="performance",

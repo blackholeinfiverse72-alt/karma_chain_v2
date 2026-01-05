@@ -9,7 +9,7 @@ import json
 import uuid
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Callable, Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
@@ -90,7 +90,7 @@ class EventBus:
             message_id=str(uuid.uuid4()),
             channel=channel.value,
             payload=payload,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             metadata=metadata
         )
         

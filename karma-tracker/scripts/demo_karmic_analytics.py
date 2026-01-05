@@ -89,7 +89,7 @@ if __name__ == "__main__":
         show_api_endpoints()
         
         print("\n" + "=" * 40)
-        print("🎉 Karmic analytics demo completed!")
+        print("[SUCCESS] Karmic analytics demo completed!")
         print("\nTo use the analytics API endpoints, start the server with:")
         print("  python main.py")
         print("\nThen access the endpoints via HTTP requests.")

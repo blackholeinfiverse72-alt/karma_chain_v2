@@ -256,4 +256,4 @@ if __name__ == "__main__":
     test_complete_advanced_karmic_feature_integration()
     test_10_action_user_flow()
     
-    print("\n🎉 All advanced karmic features tests passed!")
+    print("\n[SUCCESS] All advanced karmic features tests passed!")

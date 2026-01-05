@@ -235,7 +235,7 @@ if __name__ == "__main__":
     all_valid = all([files_valid, log_valid, manifest_valid, readme_valid, guide_valid])
     
     if all_valid:
-        print("🎉 ALL VALIDATIONS PASSED!")
+        print("[SUCCESS] ALL VALIDATIONS PASSED!")
         print("✅ Unreal Integration Validation + Final Handover COMPLETE!")
         print("\nDeliverables successfully implemented:")
         print("  • /utils/unreal_broadcast.py - WebSocket push module")

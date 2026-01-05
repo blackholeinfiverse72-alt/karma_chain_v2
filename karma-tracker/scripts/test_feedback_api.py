@@ -144,9 +144,9 @@ if __name__ == "__main__":
         print(f"Passed: {passed}/{total}")
         
         if passed == total:
-            print("🎉 All feedback engine API tests passed!")
+            print("[SUCCESS] All feedback engine API tests passed!")
         else:
-            print("⚠️  Some feedback engine API tests failed or were skipped.")
+            print("[WARNING] Some feedback engine API tests failed or were skipped.")
             
     except Exception as e:
         print(f"Error running tests: {e}")

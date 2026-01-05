@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from database import users_col
 from config import TOKEN_ATTRIBUTES
 from datetime import datetime
 
 def now_utc():
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 def apply_decay_and_expiry(user_doc):
     last_decay = user_doc.get("last_decay", now_utc())

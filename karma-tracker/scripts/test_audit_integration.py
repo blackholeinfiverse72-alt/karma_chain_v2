@@ -7,7 +7,7 @@ import sys
 import os
 import json
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Add the project root to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -100,7 +100,7 @@ def test_direct_audit_enhancer():
             "test_value": 123,
             "test_string": "hello world"
         },
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
     
     # Enhance the entry
@@ -139,7 +139,7 @@ if __name__ == "__main__":
         test_direct_audit_enhancer()
         
         print("\n" + "=" * 50)
-        print("🎉 All audit integration tests passed!")
+        print("[SUCCESS] All audit integration tests passed!")
         
     except Exception as e:
         print(f"\n❌ Test failed with error: {e}")

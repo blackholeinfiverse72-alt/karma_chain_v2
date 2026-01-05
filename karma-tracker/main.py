@@ -3,7 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from routes.v1.karma.main import router as karma_router
 from routes import balance, redeem, policy
 from routes.karma import router as karma_api_router  # New karma API router
@@ -52,7 +52,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             "message": message
         },
         "path": request.url.path,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
     if isinstance(detail, dict):
         payload["details"] = detail
@@ -69,7 +69,7 @@ async def request_validation_exception_handler(request: Request, exc: RequestVal
                 "message": "Validation failed"
             },
             "path": request.url.path,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "details": exc.errors()
         }
     )
@@ -85,7 +85,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
                 "message": "Internal server error"
             },
             "path": request.url.path,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     )
 

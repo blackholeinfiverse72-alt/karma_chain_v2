@@ -248,4 +248,4 @@ if __name__ == "__main__":
     test_rnanubandhan_ledger_details()
     test_predictive_guidance_scoring()
     
-    print("\n🎉 All karma cycle simulation tests passed!")
+    print("\n[SUCCESS] All karma cycle simulation tests passed!")

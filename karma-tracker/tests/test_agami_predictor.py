@@ -265,6 +265,6 @@ if __name__ == "__main__":
     print(f"Test Results: {passed}/{len(tests)} tests passed")
     
     if passed == len(tests):
-        print("🎉 All Agami Karma Predictor tests passed!")
+        print("[SUCCESS] All Agami Karma Predictor tests passed!")
     else:
-        print("⚠️  Some tests failed.")
+        print("[WARNING] Some tests failed.")

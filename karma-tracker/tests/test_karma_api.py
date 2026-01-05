@@ -307,9 +307,9 @@ if __name__ == "__main__":
         print(f"Passed: {passed}/{total}")
         
         if passed == total:
-            print("🎉 All tests passed!")
+            print("[SUCCESS] All tests passed!")
         else:
-            print("⚠️  Some tests failed or were skipped.")
+            print("[WARNING] Some tests failed or were skipped.")
             
     except Exception as e:
         print(f"Error running tests: {e}")
