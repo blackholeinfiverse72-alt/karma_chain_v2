@@ -15,6 +15,7 @@ from database import karma_events_col, users_col
 from config import TOKEN_ATTRIBUTES
 from utils.karma_engine import calculate_net_karma
 from utils.event_bus import publish_karma_feedback
+from utils.sovereign_bridge import emit_karma_signal, SignalType
 import asyncio
 
 # Setup logging
@@ -29,6 +30,9 @@ class KarmicFeedbackEngine:
         self.stp_bridge_url = self.config.get("stp_bridge_url", "http://localhost:8001/insightflow")
         self.feedback_batch_size = self.config.get("feedback_batch_size", 10)
         self.feedback_interval = self.config.get("feedback_interval", 60)  # seconds
+        
+        # Constraint mode: operate as silent governor instead of active decision engine
+        self.constraint_only_mode = self.config.get("constraint_only_mode", False)
         
     def compute_dynamic_influence(self, user_doc: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -65,6 +69,9 @@ class KarmicFeedbackEngine:
         
         # Compute dynamic influence
         dynamic_influence = reward_score - penalty_score + behavioral_bias
+        
+        # In constraint mode, only compute and return influence without taking action
+        # This makes the system operate as a silent governor rather than active decision engine
         
         return {
             "user_id": user_doc.get("user_id"),
@@ -185,6 +192,16 @@ class KarmicFeedbackEngine:
             # Aggregate data
             aggregated_data = self.aggregate_per_user_and_module(user_id)
             
+            # In constraint-only mode, just compute and return without publishing
+            if self.constraint_only_mode:
+                return {
+                    "status": "computed_only",
+                    "user_id": user_id,
+                    "influence_data": aggregated_data,
+                    "constraint_mode": True,
+                    "message": "Signal computed but not published - operating in constraint-only mode"
+                }
+            
             # Prepare signal payload
             signal_payload = {
                 "signal_id": str(uuid.uuid4()),
@@ -194,28 +211,48 @@ class KarmicFeedbackEngine:
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
             
-            # Publish to event bus
+            # Emit signal to Sovereign Core for authorization
             event_metadata = {
                 "source": "karmic_feedback_engine",
                 "user_id": user_id,
                 "signal_id": signal_payload["signal_id"]
             }
-            publish_karma_feedback(signal_payload, event_metadata)
             
-            # Send to STP bridge
-            endpoint = insightflow_endpoint or self.stp_bridge_url
-            result = self._send_to_stp_bridge(signal_payload, endpoint)
+            # First, emit to Sovereign Core for authorization
+            sovereign_result = emit_karma_signal(SignalType.FEEDBACK_SIGNAL, {
+                "payload": signal_payload,
+                "event_metadata": event_metadata
+            })
             
-            # Log transmission
-            self._log_transmission(signal_payload, result)
-            
-            return {
-                "status": "success",
-                "user_id": user_id,
-                "signal_id": signal_payload["signal_id"],
-                "sent_to": endpoint,
-                "result": result
-            }
+            # Only proceed with actual transmission if authorized
+            if sovereign_result.get("authorized", False):
+                # Publish to event bus
+                publish_karma_feedback(signal_payload, event_metadata)
+                
+                # Send to STP bridge
+                endpoint = insightflow_endpoint or self.stp_bridge_url
+                result = self._send_to_stp_bridge(signal_payload, endpoint)
+                
+                # Log transmission
+                self._log_transmission(signal_payload, result)
+                
+                return {
+                    "status": "success",
+                    "user_id": user_id,
+                    "signal_id": signal_payload["signal_id"],
+                    "sent_to": endpoint,
+                    "result": result,
+                    "authorized": True
+                }
+            else:
+                logger.info(f"Signal {signal_payload['signal_id']} rejected by Sovereign Core")
+                return {
+                    "status": "rejected",
+                    "user_id": user_id,
+                    "signal_id": signal_payload["signal_id"],
+                    "authorized": False,
+                    "authorization_reason": sovereign_result.get("authorization_response", {}).get("reason", "Not authorized by Sovereign Core")
+                }
             
         except Exception as e:
             logger.error(f"Error publishing feedback signal for user {user_id}: {str(e)}")

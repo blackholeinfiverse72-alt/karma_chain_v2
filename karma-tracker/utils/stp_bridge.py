@@ -317,8 +317,7 @@ class STPBridge:
     
     def _wait_for_ack(self, transmission_id: str) -> Dict[str, Any]:
         """
-        Wait for ACK/NACK for a transmission (placeholder implementation)
-        In a real system, this would listen for a response from InsightFlow
+        Wait for ACK/NACK for a transmission with proper timeout and retry logic
         
         Args:
             transmission_id: ID of transmission to wait for
@@ -326,9 +325,60 @@ class STPBridge:
         Returns:
             Dict with ACK/NACK result
         """
-        # Placeholder implementation - in a real system, this would
-        # implement a proper ACK/NACK protocol
-        return {"status": "ack", "transmission_id": transmission_id}
+        import time
+        import threading
+        
+        # Create a unique endpoint for this transmission ACK
+        ack_endpoint = f"{self.insightflow_endpoint}/ack/{transmission_id}"
+        
+        start_time = time.time()
+        while time.time() - start_time < self.ack_timeout:
+            try:
+                # Poll for ACK/NACK response
+                response = self.session.get(
+                    ack_endpoint,
+                    timeout=min(5, self.ack_timeout)  # Short timeout for polling
+                )
+                
+                if response.status_code == 200:
+                    ack_response = response.json()
+                    return ack_response
+                elif response.status_code == 404:
+                    # ACK not ready yet, continue waiting
+                    time.sleep(0.5)  # Wait before next poll
+                    continue
+                else:
+                    logger.warning(f"Unexpected response status when waiting for ACK: {response.status_code}")
+                    time.sleep(0.5)
+                    continue
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"Error polling for ACK: {str(e)}")
+                time.sleep(0.5)
+                continue
+        
+        # If we get here, timeout occurred
+        logger.warning(f"Timeout waiting for ACK/NACK for transmission {transmission_id}")
+        return {
+            "status": "timeout",
+            "transmission_id": transmission_id,
+            "reason": f"ACK/NACK timeout after {self.ack_timeout} seconds"
+        }
+        
+    def register_ack_handler(self, transmission_id: str, callback: callable):
+        """
+        Register a callback to handle ACK/NACK responses asynchronously
+        
+        Args:
+            transmission_id: ID of transmission to monitor
+            callback: Function to call with ACK/NACK result
+        """
+        def ack_monitor():
+            result = self._wait_for_ack(transmission_id)
+            callback(result)
+        
+        # Run ACK monitoring in background thread
+        thread = threading.Thread(target=ack_monitor, daemon=True)
+        thread.start()
 
 # Global instance
 stp_bridge = STPBridge()

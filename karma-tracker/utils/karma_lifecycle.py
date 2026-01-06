@@ -9,6 +9,7 @@ from typing import Dict, Any, Tuple, Optional
 from database import users_col, death_events_col
 from config import LOKA_THRESHOLDS, KARMA_FACTORS
 from utils.event_bus import EventBus, Channel, publish_karma_lifecycle
+from utils.sovereign_bridge import emit_karma_signal, SignalType
 from utils.karma_engine import calculate_net_karma
 
 class KarmaLifecycleEngine:
@@ -59,7 +60,7 @@ class KarmaLifecycleEngine:
             {"$set": {"balances.PrarabdhaKarma": new_prarabdha}}
         )
         
-        # Publish lifecycle event
+        # Emit prarabdha update to Sovereign Core for authorization
         event_metadata = {
             "source": "karma_lifecycle_engine",
             "user_id": user_id,
@@ -72,7 +73,20 @@ class KarmaLifecycleEngine:
             "new_prarabdha": new_prarabdha,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
-        publish_karma_lifecycle(event_payload, event_metadata)
+        
+        # Request authorization from Sovereign Core before proceeding
+        authorization_result = emit_karma_signal(SignalType.LIFECYCLE_EVENT, {
+            "user_id": user_id,
+            "payload": event_payload,
+            "event_metadata": event_metadata
+        })
+        
+        # Only proceed with publishing if authorized
+        if authorization_result.get("authorized", False):
+            publish_karma_lifecycle(event_payload, event_metadata)
+        else:
+            # Log that the update was rejected
+            print(f"Prarabdha update for user {user_id} rejected by Sovereign Core")
         
         return new_prarabdha
     
@@ -202,7 +216,7 @@ class KarmaLifecycleEngine:
         
         death_events_col.insert_one(death_event_doc)
         
-        # Publish lifecycle event
+        # Emit death event to Sovereign Core for authorization
         event_metadata = {
             "source": "karma_lifecycle_engine",
             "user_id": user_id,
@@ -215,7 +229,26 @@ class KarmaLifecycleEngine:
             "inheritance": inheritance,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
-        publish_karma_lifecycle(event_payload, event_metadata)
+        
+        # Request authorization from Sovereign Core before proceeding
+        authorization_result = emit_karma_signal(SignalType.DEATH_THRESHOLD_REACHED, {
+            "user_id": user_id,
+            "payload": event_payload,
+            "event_type": "death_event"
+        })
+        
+        # Only proceed with publishing if authorized
+        if authorization_result.get("authorized", False):
+            publish_karma_lifecycle(event_payload, event_metadata)
+        else:
+            print(f"Death event for user {user_id} rejected by Sovereign Core")
+            # Return early without processing the death
+            return {
+                "status": "rejected",
+                "message": "Death event not authorized by Sovereign Core",
+                "user_id": user_id,
+                "authorized": False
+            }
         
         return {
             "status": "death_event_triggered",
@@ -292,7 +325,7 @@ class KarmaLifecycleEngine:
             {"$set": {"status": "deceased", "deceased_at": datetime.now(timezone.utc)}}
         )
         
-        # Publish lifecycle event
+        # Emit rebirth event to Sovereign Core for authorization
         event_metadata = {
             "source": "karma_lifecycle_engine",
             "user_id": user_id,
@@ -305,7 +338,27 @@ class KarmaLifecycleEngine:
             "starting_level": starting_level,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
-        publish_karma_lifecycle(event_payload, event_metadata)
+        
+        # Request authorization from Sovereign Core before proceeding
+        authorization_result = emit_karma_signal(SignalType.LIFECYCLE_EVENT, {
+            "user_id": user_id,
+            "payload": event_payload,
+            "event_type": "rebirth"
+        })
+        
+        # Only proceed with publishing if authorized
+        if authorization_result.get("authorized", False):
+            publish_karma_lifecycle(event_payload, event_metadata)
+        else:
+            print(f"Rebirth event for user {user_id} rejected by Sovereign Core")
+            # Return early without completing rebirth
+            return {
+                "status": "rejected",
+                "message": "Rebirth event not authorized by Sovereign Core",
+                "old_user_id": user_id,
+                "new_user_id": new_user_id,
+                "authorized": False
+            }
         
         return {
             "status": "rebirth_completed",
