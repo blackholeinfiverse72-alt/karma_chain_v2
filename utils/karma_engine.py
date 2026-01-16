@@ -1,0 +1,470 @@
+import json
+import re
+from typing import Dict, List, Any, Optional
+from enum import Enum
+
+class KarmaBand(Enum):
+    LOW = "low"
+    NEUTRAL = "neutral"
+    POSITIVE = "positive"
+
+class KarmaEngine:
+    """
+    Karma Engine - Computes karma scores based on interaction logs
+    Implements the behavioral rules defined in karma_model_spec.md
+    """
+    
+    def __init__(self):
+        # Define scoring weights for different behaviors
+        self.positive_weights = {
+            'politeness': 3,  # "please", "thank you", etc.
+            'thoughtful_question': 5,
+            'respectful_tone': 2,
+            'acknowledging_guidance': 4,
+            'constructive_feedback': 3,
+            'patience': 2,
+            'gratitude': 3,
+            'following_guidelines': 2
+        }
+        
+        self.negative_weights = {
+            'spam': -8,
+            'rudeness': -10,
+            'ignoring_guidance': -5,
+            'unsafe_intent': -15,
+            'harassment': -12,
+            'intentional_provocation': -10,
+            'violation_terms': -10
+        }
+        
+        # Define thresholds for karma bands
+        self.band_thresholds = {
+            'low': (-float('inf'), 30),
+            'neutral': (30, 70),
+            'positive': (70, float('inf'))
+        }
+        
+        # Load constraint-only mode setting
+        try:
+            from .sovereign_bridge import is_constraint_only_mode
+            self.constraint_only_mode = is_constraint_only_mode()
+        except ImportError:
+            self.constraint_only_mode = False
+    
+    def _extract_text_from_log(self, interaction_log: List[Dict[str, Any]]) -> str:
+        """
+        Extract all text content from the interaction log for analysis
+        """
+        text_content = []
+        for entry in interaction_log:
+            if 'message' in entry:
+                text_content.append(entry['message'])
+            elif 'text' in entry:
+                text_content.append(entry['text'])
+            elif 'content' in entry:
+                text_content.append(entry['content'])
+        return ' '.join(text_content).lower()
+    
+    def _detect_politeness(self, text: str) -> int:
+        """Detect polite language patterns"""
+        politeness_patterns = [
+            r'\bplease\b',
+            r'\bthank you\b',
+            r'\bthanks\b',
+            r'\bplease\b',
+            r'\bappreciate\b',
+            r'\bgrateful\b',
+            r'\bexcuse me\b',
+            r'\bpardon\b',
+            r'\bsorry\b'
+        ]
+        
+        count = 0
+        for pattern in politeness_patterns:
+            count += len(re.findall(pattern, text))
+        
+        return count * self.positive_weights['politeness']
+    
+    def _detect_thoughtful_questions(self, text: str) -> int:
+        """Detect thoughtful questions that show engagement"""
+        # Questions that show deep thinking or learning intent
+        thoughtful_patterns = [
+            r'\bhow does.*work\b',
+            r'\bwhy.*\b',
+            r'\bcan you explain.*\b',
+            r'\bwhat if.*\b',
+            r'\bhow could.*\b',
+            r'\bcould you elaborate.*\b',
+            r'\bwhat are the.*implications\b',
+            r'\bhow does this relate.*\b',
+            r'\bcan you help me understand.*\b'
+        ]
+        
+        count = 0
+        for pattern in thoughtful_patterns:
+            count += len(re.findall(pattern, text, re.IGNORECASE))
+        
+        return count * self.positive_weights['thoughtful_question']
+    
+    def _detect_respectful_tone(self, text: str) -> int:
+        """Detect respectful communication patterns"""
+        respectful_indicators = [
+            r'\bunderstand\b',
+            r'\brespect\b',
+            r'\bagree\b',
+            r'\bvalid point\b',
+            r'\binteresting perspective\b',
+            r'\bhelpful\b',
+            r'\binsightful\b',
+            r'\bconstructive\b'
+        ]
+        
+        count = 0
+        for pattern in respectful_indicators:
+            count += len(re.findall(pattern, text, re.IGNORECASE))
+        
+        return count * self.positive_weights['respectful_tone']
+    
+    def _detect_acknowledging_guidance(self, text: str) -> int:
+        """Detect acknowledgment of previous guidance"""
+        acknowledgment_patterns = [
+            r'\bthat helped\b',
+            r'\bthanks for the guidance\b',
+            r'\bfollowing your advice\b',
+            r'\bbased on your suggestion\b',
+            r'\bthat makes sense\b',
+            r'\bgood point\b',
+            r'\blearned from\b',
+            r'\bappreciate the clarification\b'
+        ]
+        
+        count = 0
+        for pattern in acknowledgment_patterns:
+            count += len(re.findall(pattern, text, re.IGNORECASE))
+        
+        return count * self.positive_weights['acknowledging_guidance']
+    
+    def _detect_constructive_feedback(self, text: str) -> int:
+        """Detect constructive feedback"""
+        feedback_indicators = [
+            r'\bthis could be improved by\b',
+            r'\bperhaps you could\b',
+            r'\ba suggestion would be\b',
+            r'\bhere is an alternative\b',
+            r'\bconsider\b',
+            r'\bworth noting\b',
+            r'\badditionally\b'
+        ]
+        
+        count = 0
+        for pattern in feedback_indicators:
+            count += len(re.findall(pattern, text, re.IGNORECASE))
+        
+        return count * self.positive_weights['constructive_feedback']
+    
+    def _detect_spam(self, text: str) -> int:
+        """Detect spam-like behavior"""
+        spam_indicators = [
+            r'\brepeat.*repeat\b',
+            r'\btest\b.*\btest\b.*\btest\b',
+            r'(.)\1{10,}',  # Repeated characters
+            r'\bhello\b.*\bhello\b.*\bhello\b',  # Repeated greetings
+            r'\bcopy\b.*\bcopy\b.*\bcopy\b',  # Repeated words
+        ]
+        
+        count = 0
+        for pattern in spam_indicators:
+            count += len(re.findall(pattern, text, re.IGNORECASE))
+        
+        return count * self.negative_weights['spam']
+    
+    def _detect_rudeness(self, text: str) -> int:
+        """Detect rude language patterns"""
+        rudeness_patterns = [
+            r'\bstupid\b',
+            r'\bidiot\b',
+            r'\buseless\b',
+            r'\bworthless\b',
+            r'\bfake\b',
+            r'\blie\b',
+            r'\bdumb\b',
+            r'\bterrible\b',
+            r'\bhorrible\b',
+            r'\bawful\b'
+        ]
+        
+        count = 0
+        for pattern in rudeness_patterns:
+            count += len(re.findall(pattern, text, re.IGNORECASE))
+        
+        return count * self.negative_weights['rudeness']
+    
+    def _detect_ignoring_guidance(self, text: str) -> int:
+        """Detect signs of ignoring previous guidance"""
+        ignore_indicators = [
+            r'\bignore.*previous\b',
+            r'\bnever mind.*previous\b',
+            r'\bnever mind.*suggestion\b',
+            r'\bnever mind.*advice\b',
+            r'\bdisregard.*before\b',
+            r'\bforget.*suggestion\b'
+        ]
+        
+        count = 0
+        for pattern in ignore_indicators:
+            count += len(re.findall(pattern, text, re.IGNORECASE))
+        
+        return count * self.negative_weights['ignoring_guidance']
+    
+    def _detect_unsafe_intent(self, text: str) -> int:
+        """Detect potentially unsafe intent signals"""
+        unsafe_patterns = [
+            r'\bexploit\b',
+            r'\bmanipulate\b',
+            r'\bgive me.*harmful\b',
+            r'\bgenerate.*harmful\b',
+            r'\bignore.*safety\b',
+            r'\boverride.*rules\b',
+            r'\bbypass.*safety\b',
+            r'\bignore.*guidelines\b'
+        ]
+        
+        count = 0
+        for pattern in unsafe_patterns:
+            count += len(re.findall(pattern, text, re.IGNORECASE))
+        
+        return count * self.negative_weights['unsafe_intent']
+    
+    def _detect_neutral_factors(self, text: str) -> int:
+        """Detect factors that should NOT affect karma (return 0, just for traceability)"""
+        # These are factors that must never affect karma
+        # We're just detecting them for traceability purposes
+        neutral_indicators = [
+            r'\breligion\b',
+            r'\bpolitical\b',
+            r'\bpolitics\b',
+            r'\bemotional\b',
+            r'\bmental health\b',
+            r'\bgrammar\b',
+            r'\blanguage level\b',
+            r'\bmistake\b'
+        ]
+        
+        count = 0
+        for pattern in neutral_indicators:
+            count += len(re.findall(pattern, text, re.IGNORECASE))
+        
+        # Return 0 as these should not affect karma
+        return 0
+    
+    def compute_karma(self, interaction_log: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Compute karma score and band from interaction log
+        
+        Args:
+            interaction_log: List of interaction entries
+            
+        Returns:
+            Dict with karma_score, karma_band, and traceability information
+        """
+        if not isinstance(interaction_log, list):
+            raise ValueError("Interaction log must be a list of entries")
+        
+        # Initialize scoring
+        total_score = 50  # Base score of 50
+        trace_log = []
+        
+        # Extract text from log
+        text_content = self._extract_text_from_log(interaction_log)
+        
+        # Apply positive scoring rules
+        politeness_score = self._detect_politeness(text_content)
+        if politeness_score != 0:
+            trace_log.append(f"Politeness detected: {politeness_score}")
+        
+        thoughtful_score = self._detect_thoughtful_questions(text_content)
+        if thoughtful_score != 0:
+            trace_log.append(f"Thoughtful questions detected: {thoughtful_score}")
+        
+        respectful_score = self._detect_respectful_tone(text_content)
+        if respectful_score != 0:
+            trace_log.append(f"Respectful tone detected: {respectful_score}")
+        
+        acknowledgment_score = self._detect_acknowledging_guidance(text_content)
+        if acknowledgment_score != 0:
+            trace_log.append(f"Acknowledging guidance detected: {acknowledgment_score}")
+        
+        feedback_score = self._detect_constructive_feedback(text_content)
+        if feedback_score != 0:
+            trace_log.append(f"Constructive feedback detected: {feedback_score}")
+        
+        # Apply negative scoring rules
+        spam_score = self._detect_spam(text_content)
+        if spam_score != 0:
+            trace_log.append(f"Spam detected: {spam_score}")
+        
+        rudeness_score = self._detect_rudeness(text_content)
+        if rudeness_score != 0:
+            trace_log.append(f"Rudeness detected: {rudeness_score}")
+        
+        ignoring_score = self._detect_ignoring_guidance(text_content)
+        if ignoring_score != 0:
+            trace_log.append(f"Ignoring guidance detected: {ignoring_score}")
+        
+        unsafe_score = self._detect_unsafe_intent(text_content)
+        if unsafe_score != 0:
+            trace_log.append(f"Unsafe intent detected: {unsafe_score}")
+        
+        # Neutral factors (should not affect score, just for traceability)
+        neutral_score = self._detect_neutral_factors(text_content)
+        if neutral_score == 0:  # This is always true since neutral factors don't affect score
+            trace_log.append(f"Neutral factors detected (no score impact): {neutral_score}")
+        
+        # Calculate total score
+        total_score += politeness_score
+        total_score += thoughtful_score
+        total_score += respectful_score
+        total_score += acknowledgment_score
+        total_score += feedback_score
+        total_score += spam_score
+        total_score += rudeness_score
+        total_score += ignoring_score
+        total_score += unsafe_score
+        
+        # Ensure score stays within reasonable bounds (-100 to 100)
+        total_score = max(-100, min(100, total_score))
+        
+        # Determine karma band
+        karma_band = self._determine_karma_band(total_score)
+        
+        # Prepare result
+        result = {
+            "karma_score": total_score,
+            "karma_band": karma_band.value,
+            "traceability": {
+                "base_score": 50,
+                "factors_applied": trace_log,
+                "detailed_breakdown": {
+                    "politeness": politeness_score,
+                    "thoughtful_questions": thoughtful_score,
+                    "respectful_tone": respectful_score,
+                    "acknowledging_guidance": acknowledgment_score,
+                    "constructive_feedback": feedback_score,
+                    "spam": spam_score,
+                    "rudeness": rudeness_score,
+                    "ignoring_guidance": ignoring_score,
+                    "unsafe_intent": unsafe_score
+                }
+            }
+        }
+        
+        # In constraint-only mode, only return basic information without detailed explanations
+        if self.constraint_only_mode:
+            return {
+                "karma_score": total_score,
+                "karma_band": karma_band.value
+            }
+        
+        return result
+    
+    def _determine_karma_band(self, score: int) -> KarmaBand:
+        """Determine the karma band based on the score"""
+        if self.band_thresholds['low'][0] <= score <= self.band_thresholds['low'][1]:
+            return KarmaBand.LOW
+        elif self.band_thresholds['neutral'][0] <= score <= self.band_thresholds['neutral'][1]:
+            return KarmaBand.NEUTRAL
+        else:
+            return KarmaBand.POSITIVE
+
+
+def compute_karma(interaction_log: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Main function to compute karma from interaction log
+    This function ensures deterministic output for the same input
+    
+    Args:
+        interaction_log: List of interaction entries
+        
+    Returns:
+        Dict with karma_score and karma_band in the required format
+    """
+    engine = KarmaEngine()
+    result = engine.compute_karma(interaction_log)
+    
+    # Return only the required fields as per specification
+    return {
+        "karma_score": result["karma_score"],
+        "karma_band": result["karma_band"]
+    }
+
+
+def evaluate_action_karma(user: Dict[str, Any], action: str, intensity: float = 1.0) -> Dict[str, Any]:
+    """Evaluate the karmic impact of an action."""
+    # Extract interaction log from user if available, otherwise create a simple log
+    interaction_log = user.get('interaction_log', [])
+    
+    # If no interaction log exists, create a simple log based on the action
+    if not interaction_log:
+        interaction_log = [{'action': action, 'intensity': intensity, 'timestamp': datetime.now(timezone.utc).isoformat()}]
+    
+    # Compute karma based on the interaction log
+    result = compute_karma(interaction_log)
+    
+    # Calculate corrective recommendations based on the action
+    corrective_recommendations = []
+    if 'negative' in action.lower() or 'bad' in action.lower():
+        corrective_recommendations.append({
+            'action': 'engage_in_positive_behavior',
+            'priority': 'high',
+            'recommended_intensity': 1.0
+        })
+    
+    # Return the evaluation result
+    return {
+        'net_karma': result['karma_score'],
+        'positive_impact': result['karma_score'] if result['karma_score'] > 0 else 0,
+        'negative_impact': abs(result['karma_score']) if result['karma_score'] < 0 else 0,
+        'karma_band': result['karma_band'],
+        'sanchita_change': 0,  # Placeholder - would be calculated in a full implementation
+        'prarabdha_change': 0,  # Placeholder - would be calculated in a full implementation
+        'rnanubandhan_change': 0,  # Placeholder - would be calculated in a full implementation
+        'corrective_recommendations': corrective_recommendations,
+        'dridha_influence': result['karma_score'] * 0.1  # Placeholder calculation
+    }
+
+
+def determine_corrective_guidance(user: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Determine corrective guidance based on user's current state."""
+    guidance = []
+    
+    # Check if user has negative karma
+    if user.get('karma_score', 50) < 30:
+        guidance.append({
+            'type': 'atonement_suggested',
+            'message': 'Consider engaging in atonement activities to improve your karma',
+            'priority': 'high'
+        })
+    
+    # Check if user has low engagement
+    balances = user.get('balances', {})
+    if (balances.get('DharmaPoints', 0) + balances.get('SevaPoints', 0) + balances.get('PunyaTokens', 0)) < 10:
+        guidance.append({
+            'type': 'engagement_suggested',
+            'message': 'Increase participation in positive activities',
+            'priority': 'medium'
+        })
+    
+    return guidance
+
+
+# Example usage and testing
+if __name__ == "__main__":
+    # Example interaction log
+    example_log = [
+        {"role": "user", "message": "Hello, could you please help me with this question? Thank you for your time."},
+        {"role": "assistant", "message": "Of course, I'd be happy to help. What do you need assistance with?"},
+        {"role": "user", "message": "That's very helpful, thanks for the clarification. I appreciate it."}
+    ]
+    
+    result = compute_karma(example_log)
+    print(json.dumps(result, indent=2))
