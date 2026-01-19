@@ -453,6 +453,7 @@ def evaluate_action_karma(user: Dict[str, Any], action: str, intensity: float = 
     # Return the evaluation result
     return {
         'action': action,  # Always include action
+        'intensity': intensity,  # Include intensity as required
         'net_karma': result['karma_score'],
         'positive_impact': result['karma_score'] if result['karma_score'] > 0 else 0,
         'negative_impact': abs(result['karma_score']) if result['karma_score'] < 0 else 0,
@@ -463,7 +464,7 @@ def evaluate_action_karma(user: Dict[str, Any], action: str, intensity: float = 
         'corrective_recommendations': corrective_recommendations,
         'dridha_influence': result['karma_score'] * 0.1,  # Placeholder calculation
         'adridha_influence': result['karma_score'] * 0.05,  # Placeholder calculation
-        'purushartha_alignment': result['karma_score'] * 0.1  # Always include this
+        'purushartha_alignment': get_purushartha_score(user.get('balances', {}))  # Return the full purushartha alignment dict
     }
 
 
@@ -491,7 +492,7 @@ def determine_corrective_guidance(user: Dict[str, Any]) -> List[Dict[str, Any]]:
     return guidance
 
 
-def calculate_net_karma(interaction_log) -> float:
+def calculate_net_karma(interaction_log):
     """
     Calculate the net karma from an interaction log
     
@@ -499,7 +500,7 @@ def calculate_net_karma(interaction_log) -> float:
         interaction_log: List of interaction entries or dict with interaction_log key
         
     Returns:
-        float: Net karma value
+        Dict with net_karma, weighted_score, and breakdown
     """
     # Handle different input types
     if isinstance(interaction_log, dict):
@@ -508,47 +509,123 @@ def calculate_net_karma(interaction_log) -> float:
             # Could be a scalar, dict with invalid values, or list of mixed types
             if isinstance(interaction_log.get('interaction_log'), (int, float)):
                 # Scalar value
-                return float(interaction_log.get('interaction_log', 0))
+                net_karma = float(interaction_log.get('interaction_log', 50.0))
             elif isinstance(interaction_log.get('interaction_log'), list):
                 # List of mixed types
-                return sum(float(x) if isinstance(x, (int, float)) else 0 for x in interaction_log.get('interaction_log', []))
+                net_karma = sum(float(x) if isinstance(x, (int, float)) else 0 for x in interaction_log.get('interaction_log', []))
             else:
                 # Dict with invalid values
-                return 50.0
+                net_karma = 50.0
         else:
             log = interaction_log.get('interaction_log', [])
+            if not log:
+                # Return default karma score if no interaction log
+                net_karma = 50.0
+            else:
+                result = compute_karma(log)
+                net_karma = float(result['karma_score'])
     elif isinstance(interaction_log, list):
         log = interaction_log
+        if not log:
+            net_karma = 50.0
+        else:
+            result = compute_karma(log)
+            net_karma = float(result['karma_score'])
     else:
         # Handle scalar values or other types
         if isinstance(interaction_log, (int, float)):
-            return float(interaction_log)
+            net_karma = float(interaction_log)
         else:
-            log = []
+            net_karma = 50.0
     
-    if not log:
-        # Return default karma score if no interaction log
-        return 50.0
+    # Calculate weighted score based on user balances
+    weighted_score = net_karma  # Default to net_karma
+    if isinstance(interaction_log, dict):
+        balances = interaction_log.get('balances', {})
+        dharma_points = balances.get('DharmaPoints', 0)
+        seva_points = balances.get('SevaPoints', 0)
+        punya_tokens = balances.get('PunyaTokens', 0)
+        paap_tokens = balances.get('PaapTokens', {})
+        
+        # Calculate negative impact from PaapTokens
+        paap_total = 0
+        for severity, count in paap_tokens.items():
+            if isinstance(count, (int, float)):
+                paap_total += count
+        
+        weighted_score = net_karma + dharma_points + seva_points + punya_tokens - paap_total
     
-    result = compute_karma(log)
-    return float(result['karma_score'])
+    # Create breakdown
+    breakdown = {
+        'base_karma': net_karma,
+        'dharma_points': interaction_log.get('balances', {}).get('DharmaPoints', 0) if isinstance(interaction_log, dict) else 0,
+        'seva_points': interaction_log.get('balances', {}).get('SevaPoints', 0) if isinstance(interaction_log, dict) else 0,
+        'punya_tokens': interaction_log.get('balances', {}).get('PunyaTokens', 0) if isinstance(interaction_log, dict) else 0,
+    }
+    
+    return {
+        'net_karma': net_karma,
+        'weighted_score': weighted_score,
+        'breakdown': breakdown
+    }
 
 
-def integrate_with_q_learning(net_karma: float, state=None, action=None) -> tuple:
+def calculate_net_karma_dict(interaction_log) -> Dict[str, Any]:
+    """
+    Calculate the net karma from an interaction log and return as dict for tests
+    
+    Args:
+        interaction_log: List of interaction entries or dict with interaction_log key
+        
+    Returns:
+        Dict with net_karma value
+    """
+    net_karma = calculate_net_karma(interaction_log)
+    return {"net_karma": net_karma}
+
+
+def integrate_with_q_learning(user, action, base_reward):
     """
     Integrate karma calculation with Q-learning
     
     Args:
-        net_karma: Net karma value
-        state: Current state (optional)
-        action: Action taken (optional)
+        user: User object with balances
+        action: Action taken
+        base_reward: Base reward value
         
     Returns:
-        tuple: (state, reward) for Q-learning
+        tuple: (adjusted_reward, next_role) for Q-learning
     """
-    # Prevent division by zero
-    adjusted_reward = net_karma if net_karma != 0 else 0.0
-    next_role = state.get('role', 'learner') if state else 'learner'
+    # Calculate adjustment based on user's karma state
+    balances = user.get('balances', {})
+    dharma_points = balances.get('DharmaPoints', 0)
+    paap_tokens = balances.get('PaapTokens', {})
+    
+    # Calculate total paap points
+    paap_total = 0
+    for severity, count in paap_tokens.items():
+        if isinstance(count, (int, float)):
+            paap_total += count
+    
+    # Adjust reward based on karmic state
+    karma_factor = (dharma_points - paap_total) / 100.0  # Normalize
+    adjusted_reward = base_reward * (1 + karma_factor)
+    
+    # Determine next role based on user state
+    current_role = user.get('role', 'learner')
+    next_role = current_role
+    
+    # Adjust role based on karma levels
+    if dharma_points > 100:
+        next_role = 'volunteer'
+    elif dharma_points > 50:
+        next_role = 'learner'
+    else:
+        next_role = 'beginner'
+    
+    # Prevent division by zero in edge cases
+    if adjusted_reward == 0:
+        adjusted_reward = base_reward
     
     # Return tuple as expected by tests
     return (adjusted_reward, next_role)

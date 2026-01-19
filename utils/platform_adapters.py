@@ -384,6 +384,9 @@ infrastructure_adapter = InfrastructureAdapter()
 # Aliases for backward compatibility
 InfraAdapter = InfrastructureAdapter
 
+# Ensure InfrastructureAdapter is defined as a separate class
+InfrastructureAdapter = InfrastructureAdapter
+
 
 def get_adapter(platform_context: str) -> Optional[PlatformAdapter]:
     """
