@@ -351,6 +351,9 @@ class KarmicFeedbackEngine:
 # Global instance
 feedback_engine = KarmicFeedbackEngine()
 
+# Alias for backward compatibility
+KarmaFeedbackEngine = KarmicFeedbackEngine
+
 # Convenience functions
 def compute_user_influence(user_id: str) -> Dict[str, Any]:
     """Compute karmic influence for a user"""

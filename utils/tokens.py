@@ -3,6 +3,18 @@ from database import users_col
 from config import TOKEN_ATTRIBUTES
 from datetime import datetime
 
+
+class TokenManager:
+    """Manages token operations for the karma system"""
+    
+    def __init__(self):
+        pass
+    
+    @staticmethod
+    def apply_decay_and_expiry(user_doc):
+        return apply_decay_and_expiry(user_doc)
+
+
 def now_utc():
     return datetime.now(timezone.utc)
 

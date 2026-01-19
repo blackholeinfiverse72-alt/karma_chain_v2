@@ -360,6 +360,9 @@ gurukul_adapter = GurukulAdapter()
 finance_adapter = FinanceAdapter()
 infrastructure_adapter = InfrastructureAdapter()
 
+# Aliases for backward compatibility
+InfraAdapter = InfrastructureAdapter
+
 
 def get_adapter(platform_context: str) -> Optional[PlatformAdapter]:
     """
