@@ -28,6 +28,39 @@ class AuditEnhancer:
         
         # Create export directory if it doesn't exist
         os.makedirs(self.export_directory, exist_ok=True)
+    
+    def log_action(self, action_type: str, user_id: str, context: str, details: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Log an action for audit purposes
+        
+        Args:
+            action_type: Type of action being logged
+            user_id: ID of the user performing the action
+            context: Context where the action occurred
+            details: Additional details about the action
+            
+        Returns:
+            Dict with the audit log entry
+        """
+        audit_entry = {
+            "action_type": action_type,
+            "user_id": user_id,
+            "context": context,
+            "details": details,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "entry_id": str(hashlib.sha256(f"{user_id}_{action_type}_{time.time()}".encode()).hexdigest()[:16])
+        }
+        
+        # Add cryptographic hash for integrity
+        audit_entry["_audit_hash"] = self.hash_ledger_entry(audit_entry)
+        
+        # Store in ledger collection
+        try:
+            self.ledger_collection.insert_one(audit_entry)
+        except Exception as e:
+            logger.error(f"Failed to store audit entry: {str(e)}")
+        
+        return audit_entry
         
     def hash_ledger_entry(self, entry: Dict[str, Any]) -> str:
         """

@@ -368,6 +368,22 @@ class KarmaLifecycleEngine:
             "starting_level": starting_level
         }
 
+
+def calculate_net_karma(interaction_log: list) -> float:
+    """
+    Calculate net karma from interaction log
+    
+    Args:
+        interaction_log: List of interactions
+        
+    Returns:
+        float: Net karma value
+    """
+    from utils.karma_engine import compute_karma
+    result = compute_karma(interaction_log)
+    return float(result['karma_score'])
+
+
 # Global instance
 lifecycle_engine = KarmaLifecycleEngine()
 

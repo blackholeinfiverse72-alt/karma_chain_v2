@@ -430,7 +430,8 @@ def evaluate_action_karma(user: Dict[str, Any], action: str, intensity: float = 
         'prarabdha_change': 0,  # Placeholder - would be calculated in a full implementation
         'rnanubandhan_change': 0,  # Placeholder - would be calculated in a full implementation
         'corrective_recommendations': corrective_recommendations,
-        'dridha_influence': result['karma_score'] * 0.1  # Placeholder calculation
+        'dridha_influence': result['karma_score'] * 0.1,  # Placeholder calculation
+        'adridha_influence': result['karma_score'] * 0.05  # Placeholder calculation
     }
 
 
@@ -456,6 +457,66 @@ def determine_corrective_guidance(user: Dict[str, Any]) -> List[Dict[str, Any]]:
         })
     
     return guidance
+
+
+def calculate_net_karma(interaction_log: List[Dict[str, Any]]) -> float:
+    """
+    Calculate the net karma from an interaction log
+    
+    Args:
+        interaction_log: List of interaction entries
+        
+    Returns:
+        float: Net karma value
+    """
+    result = compute_karma(interaction_log)
+    return float(result['karma_score'])
+
+
+def integrate_with_q_learning(net_karma: float, state: Dict[str, Any], action: str) -> Dict[str, Any]:
+    """
+    Integrate karma calculation with Q-learning
+    
+    Args:
+        net_karma: Net karma value
+        state: Current state
+        action: Action taken
+        
+    Returns:
+        Dict: Updated Q-learning parameters
+    """
+    # Placeholder implementation
+    return {
+        'state': state,
+        'action': action,
+        'reward': net_karma,
+        'new_state': state,
+        'done': False
+    }
+
+
+def get_purushartha_score(balances: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Calculate Purushartha alignment score
+    
+    Args:
+        balances: User's token balances
+        
+    Returns:
+        Dict: Purushartha alignment scores
+    """
+    dharma_points = balances.get('DharmaPoints', 0)
+    artha_points = balances.get('ArthaPoints', 0)  # May not exist
+    kama_points = balances.get('KamaPoints', 0)    # May not exist
+    moksha_points = balances.get('MokshaPoints', 0)  # May not exist
+    
+    return {
+        'dharma_score': dharma_points,
+        'artha_score': artha_points,
+        'kama_score': kama_points,
+        'moksha_score': moksha_points,
+        'alignment_balance': (dharma_points + artha_points + kama_points + moksha_points) / 4 if any([dharma_points, artha_points, kama_points, moksha_points]) else 0
+    }
 
 
 # Example usage and testing

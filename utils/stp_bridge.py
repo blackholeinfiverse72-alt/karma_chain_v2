@@ -336,6 +336,57 @@ class STPBridge:
             self.nonce_store.add(nonce)
             return True
     
+    def validate_ttl(self, packet: Dict[str, Any]) -> bool:
+        """
+        Validate that a packet hasn't expired based on TTL
+        
+        Args:
+            packet: The packet to validate
+            
+        Returns:
+            bool: True if packet is still valid, False if expired
+        """
+        import re
+        timestamp_str = packet.get('timestamp', '')
+        # Handle ISO format with or without timezone
+        if timestamp_str.endswith('Z'):
+            timestamp_str = timestamp_str[:-1] + '+00:00'
+        elif '+' not in timestamp_str and not timestamp_str.endswith(('Z', '+00:00')):
+            timestamp_str += '+00:00'
+        
+        # Parse the timestamp
+        try:
+            # Remove timezone info for parsing and add it separately
+            clean_timestamp = re.sub(r'[+-]\d{2}:\d{2}$', '', timestamp_str)
+            naive_dt = datetime.fromisoformat(clean_timestamp)
+            packet_timestamp = naive_dt.replace(tzinfo=timezone.utc)
+        except ValueError:
+            # If parsing fails, use current time as fallback
+            packet_timestamp = datetime.now(timezone.utc)
+        
+        current_time = datetime.now(timezone.utc)
+        elapsed_time = (current_time - packet_timestamp).total_seconds()
+        ttl = packet.get('ttl', self.ttl_seconds)
+        return elapsed_time <= ttl
+    
+    def verify_signature(self, packet: Dict[str, Any]) -> bool:
+        """
+        Verify the signature of a packet
+        
+        Args:
+            packet: The packet to verify
+            
+        Returns:
+            bool: True if signature is valid, False otherwise
+        """
+        original_signature = packet.get('signature', '')
+        # Temporarily remove signature from packet for verification
+        temp_packet = packet.copy()
+        del temp_packet['signature']
+        # Recreate signature and compare
+        recreated_signature = self._sign_payload(temp_packet)
+        return original_signature == recreated_signature
+    
     def _wait_for_ack(self, transmission_id: str) -> Dict[str, Any]:
         """
         Wait for ACK/NACK for a transmission with proper timeout and retry logic
@@ -385,6 +436,78 @@ class STPBridge:
             "reason": f"ACK/NACK timeout after {self.ack_timeout} seconds"
         }
         
+    def create_packet(self, signal: 'KarmaSignal', source: str, destination: str) -> Dict[str, Any]:
+        """
+        Create a packet containing the karma signal
+        
+        Args:
+            signal: The karma signal to wrap
+            source: Source of the packet
+            destination: Destination of the packet
+            
+        Returns:
+            Dict representing the packet
+        """
+        packet = {
+            'source': source,
+            'destination': destination,
+            'payload': signal.to_dict(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'nonce': str(uuid.uuid4()),
+            'signature': '',
+            'ttl': signal.ttl
+        }
+        # Add signature
+        packet['signature'] = self._sign_payload(packet)
+        return packet
+    
+    def send_packet(self, packet: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Send a packet containing a karma signal
+        
+        Args:
+            packet: The packet to send
+            
+        Returns:
+            Dict with sending result
+        """
+        # Validate TTL
+        if not self.validate_ttl(packet):
+            return {
+                'status': 'REJECTED',
+                'reason': 'TTL_EXPIRED',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+        
+        # Validate nonce to prevent replay attacks
+        if not self._validate_nonce(packet['nonce']):
+            return {
+                'status': 'REJECTED',
+                'reason': 'REPLAY_ATTACK_DETECTED',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+        
+        # Send to destination
+        try:
+            response = self.session.post(
+                self.insightflow_endpoint,
+                json=packet,
+                timeout=self.timeout
+            )
+            
+            return {
+                'status': 'SUCCESS' if response.status_code in [200, 201] else 'ERROR',
+                'response_status': response.status_code,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+        except Exception as e:
+            return {
+                'status': 'ERROR',
+                'error': str(e),
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+        
+
     def register_ack_handler(self, transmission_id: str, callback: callable):
         """
         Register a callback to handle ACK/NACK responses asynchronously

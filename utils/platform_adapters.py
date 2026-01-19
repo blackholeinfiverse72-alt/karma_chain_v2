@@ -70,6 +70,27 @@ class PlatformAdapter:
                 requires_core_ack=signal_info["requires_core_ack"]
             )
         return None
+    
+    def generate_signal(self, subject_id: str, severity: float, reason_code: str) -> 'KarmaSignal':
+        """
+        Generate a canonical karma signal
+        
+        Args:
+            subject_id: ID of the subject
+            severity: Severity level (0.0 to 1.0)
+            reason_code: Opaque reason code
+            
+        Returns:
+            KarmaSignal: Generated canonical karma signal
+        """
+        from .karma_signal_contract import KarmaSignal
+        return KarmaSignal(
+            subject_id=subject_id,
+            context=self.context,
+            signal="nudge",  # Default signal type
+            severity=severity,
+            reason_code=reason_code
+        )
 
 
 class AssistantAdapter(PlatformAdapter):

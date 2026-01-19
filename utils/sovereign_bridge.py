@@ -177,6 +177,43 @@ class SovereignBridge:
             
         return results
     
+    def is_core_available(self) -> bool:
+        """
+        Check if the Sovereign Core is available
+        
+        Returns:
+            bool: True if Core is available, False otherwise
+        """
+        try:
+            response = self.session.get(
+                f"{self.sovereign_core_endpoint}/health",
+                timeout=self.timeout
+            )
+            return response.status_code in [200, 201]
+        except Exception:
+            return False
+    
+    def send_signal(self, signal: 'KarmaSignal') -> Dict[str, Any]:
+        """
+        Send a karma signal to the Sovereign Core for authorization
+        
+        Args:
+            signal: The karma signal to send
+            
+        Returns:
+            Dict with authorization result
+        """
+        # Convert KarmaSignal to appropriate format for Sovereign Core
+        signal_data = signal.to_dict()
+        
+        signal_type = SignalType.CANONICAL_KARMA_SIGNAL
+        payload = {
+            "karma_signal": signal_data,
+            "event_type": "canonical_karma_signal"
+        }
+        
+        return self.emit_signal(signal_type, payload)
+    
     def health_check(self) -> Dict[str, Any]:
         """
         Check the health of the sovereign bridge connection.

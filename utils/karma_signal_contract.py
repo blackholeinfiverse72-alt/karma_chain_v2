@@ -43,6 +43,42 @@ class KarmaSignal:
         """Return the signal as a dictionary"""
         return self.data
     
+    @property
+    def subject_id(self):
+        return self.data.get("subject_id")
+    
+    @property
+    def context(self):
+        return self.data.get("context")
+    
+    @property
+    def signal(self):
+        return self.data.get("signal")
+    
+    @property
+    def severity(self):
+        return self.data.get("severity")
+    
+    @property
+    def reason_code(self):
+        return self.data.get("reason_code")
+    
+    @property
+    def ttl(self):
+        return self.data.get("ttl", 300)
+    
+    @property
+    def requires_core_ack(self):
+        return self.data.get("requires_core_ack", True)
+    
+    @property
+    def timestamp(self):
+        return self.data.get("timestamp")
+    
+    @property
+    def signal_id(self):
+        return self.data.get("signal_id")
+    
     @classmethod
     def create_signal(cls, subject_id: str, context: str, signal: str, 
                       severity: float = 0.0, reason_code: str = "GENERIC",
