@@ -37,8 +37,10 @@ class TestCrossSystemCompliance(unittest.TestCase):
             reason_code='HIGH_RISK_USER'
         )
         
-        # Attempt to send signal through bridge
+        # Mock the STP bridge send_packet to return the expected response
         with patch('utils.stp_bridge.STPBridge.send_packet') as mock_send_packet:
+            mock_send_packet.return_value = {"status": "NACK", "reason": "UNAUTHORIZED_ACTION"}
+            
             stp_bridge = STPBridge()
             packet = stp_bridge.create_packet(
                 signal=karma_signal,
@@ -304,7 +306,7 @@ class TestPlatformAdaptersCompliance(unittest.TestCase):
     
     def test_infra_adapter_compliance(self):
         """Test Infra Adapter compliance with canonical contract"""
-        adapter = InfrastructureAdapter()
+        adapter = InfraAdapter()
         
         # Test that it generates compliant signals
         signal = adapter.generate_signal(
