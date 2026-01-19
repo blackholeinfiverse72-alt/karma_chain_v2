@@ -388,6 +388,8 @@ InfraAdapter = InfrastructureAdapter
 InfrastructureAdapter = InfrastructureAdapter
 
 
+
+
 def get_adapter(platform_context: str) -> Optional[PlatformAdapter]:
     """
     Get the appropriate adapter for a platform context

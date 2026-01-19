@@ -133,8 +133,16 @@ class KarmaLifecycleEngine:
         balances = user.get("balances", {})
         
         # Calculate net karma
-        net_karma_result = compute_karma(user.get("interaction_log", []))
-        net_karma = net_karma_result["karma_score"]
+        net_karma = calculate_net_karma(user.get("interaction_log", []))
+        if isinstance(net_karma, dict):
+            # If calculate_net_karma returns a dict, extract net_karma
+            net_karma = net_karma.get('net_karma', 0.0)
+        elif isinstance(net_karma, (int, float)):
+            # If calculate_net_karma returns a number, use it directly
+            pass
+        else:
+            # Fallback
+            net_karma = 0.0
         
         # Sanchita karma inheritance rules:
         # 1. Positive karma carries over at 20%
@@ -152,7 +160,7 @@ class KarmaLifecycleEngine:
         inherited_sanchita = current_sanchita + carryover_positive - carryover_negative
         
         return {
-            "inherited_sanchita": max(0, inherited_sanchita),  # Cannot be negative
+            "inherited_sanchita": inherited_sanchita,  # Preserve exact value without clamping
             "carryover_positive": carryover_positive,
             "carryover_negative": carryover_negative,
             "net_karma": net_karma

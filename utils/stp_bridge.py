@@ -391,6 +391,9 @@ class STPBridge:
             bool: True if signature is valid, False otherwise
         """
         original_signature = packet.get('signature', '')
+        if not original_signature:
+            return False
+        
         # Temporarily remove signature from packet for verification
         temp_packet = packet.copy()
         if 'signature' in temp_packet:
@@ -460,13 +463,13 @@ class STPBridge:
         Returns:
             Dict representing the packet
         """
+        # Create packet without signature initially
         packet = {
             'source': source,
             'destination': destination,
             'payload': signal.to_dict(),
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'nonce': str(uuid.uuid4()),
-            'signature': '',
             'ttl': signal.ttl
         }
         # Add signature
@@ -495,7 +498,7 @@ class STPBridge:
         if not self._validate_nonce(packet['nonce']):
             return {
                 'status': 'REJECTED',
-                'reason': 'REPLAY_ATTACK',
+                'reason': 'REPLAY_ATTACK_DETECTED',
                 'timestamp': datetime.now(timezone.utc).isoformat()
             }
         

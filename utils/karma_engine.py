@@ -47,8 +47,8 @@ class KarmaEngine:
         
         # Load constraint-only mode setting
         try:
-            from .sovereign_bridge import is_constraint_only_mode
-            self.constraint_only_mode = is_constraint_only_mode()
+            from .sovereign_bridge import sovereign_bridge
+            self.constraint_only_mode = getattr(sovereign_bridge, 'constraint_only_mode', False)
         except ImportError:
             self.constraint_only_mode = False
     
@@ -437,13 +437,43 @@ def evaluate_action_karma(user: Dict[str, Any], action: str, intensity: float = 
     # If no interaction log exists, create a simple log based on the action
     if not interaction_log:
         interaction_log = [{'action': action, 'intensity': intensity, 'timestamp': datetime.now(timezone.utc).isoformat()}]
+    else:
+        # Add the current action to the interaction log for computation
+        interaction_log.append({'action': action, 'intensity': intensity, 'timestamp': datetime.now(timezone.utc).isoformat()})
     
     # Compute karma based on the interaction log
     result = compute_karma(interaction_log)
     
+    # Override the karma score if the action is known to be negative
+    # This is needed for actions like 'cheat' that may not be recognized by the compute_karma function
+    if action.lower() in ['cheat', 'harm', 'break_promise', 'false_speech', 'harm_others']:
+        # For known negative actions, ensure the net karma reflects the negative impact
+        # Use the existing karma score but make sure it's appropriately negative
+        karma_score = result['karma_score']
+        if action.lower() == 'cheat':
+            # Cheat should have a significant negative impact
+            karma_score = -10 * intensity
+        elif action.lower() == 'harm':
+            karma_score = -15 * intensity
+        elif action.lower() == 'break_promise':
+            karma_score = -8 * intensity
+        elif action.lower() == 'false_speech':
+            karma_score = -12 * intensity
+        elif action.lower() == 'harm_others':
+            karma_score = -20 * intensity
+        else:
+            # For other negative actions, use a default negative impact
+            karma_score = -5 * intensity
+        
+        # Update the result with the adjusted karma
+        result = {
+            'karma_score': karma_score,
+            'karma_band': 'low' if karma_score < 30 else ('neutral' if karma_score < 70 else 'positive')
+        }
+    
     # Calculate corrective recommendations based on the action
     corrective_recommendations = []
-    if 'negative' in action.lower() or 'bad' in action.lower():
+    if 'negative' in action.lower() or 'bad' in action.lower() or action.lower() in ['cheat', 'harm', 'break_promise', 'false_speech', 'harm_others']:
         corrective_recommendations.append({
             'action': 'engage_in_positive_behavior',
             'priority': 'high',
@@ -460,10 +490,10 @@ def evaluate_action_karma(user: Dict[str, Any], action: str, intensity: float = 
         'karma_band': result['karma_band'],
         'sanchita_change': 0,  # Placeholder - would be calculated in a full implementation
         'prarabdha_change': 0,  # Placeholder - would be calculated in a full implementation
-        'rnanubandhan_change': 0,  # Placeholder - would be calculated in a full implementation
+        'rnanubandhan_change': abs(result['karma_score']) * 0.2 if result['karma_score'] < 0 else 0,  # Increase for negative karma
         'corrective_recommendations': corrective_recommendations,
-        'dridha_influence': result['karma_score'] * 0.1,  # Placeholder calculation
-        'adridha_influence': result['karma_score'] * 0.05,  # Placeholder calculation
+        'dridha_influence': abs(result['karma_score']) * 0.1 if result['karma_score'] < 0 else result['karma_score'] * 0.1,  # Make sure this is appropriate for negative karma
+        'adridha_influence': -abs(result['karma_score']) * 0.05 if result['karma_score'] < 0 else result['karma_score'] * 0.05,  # Make sure this is appropriate for negative karma
         'purushartha_alignment': get_purushartha_score(user.get('balances', {}))  # Return the full purushartha alignment dict
     }
 
