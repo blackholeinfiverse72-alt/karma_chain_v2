@@ -47,8 +47,8 @@ class KarmaEngine:
         
         # Load constraint-only mode setting
         try:
-            from .sovereign_bridge import sovereign_bridge
-            self.constraint_only_mode = getattr(sovereign_bridge, 'constraint_only_mode', False)
+            from .sovereign_bridge import is_constraint_only_mode
+            self.constraint_only_mode = is_constraint_only_mode()
         except ImportError:
             self.constraint_only_mode = False
     
@@ -271,6 +271,23 @@ class KarmaEngine:
         Returns:
             Dict with processing result
         """
+        # Import here to avoid circular imports
+        from .karma_signal_contract import KarmaSignal
+        from .sovereign_bridge import sovereign_bridge
+        
+        # Create a karma signal for this change
+        karma_signal = KarmaSignal(
+            subject_id=user_id,
+            context=context,
+            signal='nudge',  # Default signal type for karma changes
+            severity=abs(change_amount) / 100.0 if change_amount != 0 else 0.0,  # Normalize to 0-1 scale
+            reason_code=reason,
+            requires_core_ack=True  # All significant karma changes require Core ACK
+        )
+        
+        # Send the signal to the Sovereign Core for authorization using the send_signal method
+        authorization_result = sovereign_bridge.send_signal(karma_signal)
+        
         # In constraint-only mode, emit signal but don't apply direct consequences
         result = {
             "user_id": user_id,
@@ -278,7 +295,8 @@ class KarmaEngine:
             "signal": f"karma_change_{change_amount}",
             "signal_emitted": True,
             "core_authorization_needed": True,
-            "constraint_only_mode": self.constraint_only_mode
+            "constraint_only_mode": self.constraint_only_mode,
+            "authorization_result": authorization_result
         }
         
         # If not in constraint-only mode, apply the change

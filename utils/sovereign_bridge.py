@@ -48,7 +48,7 @@ class SovereignBridge:
         self.authority_required = self.config.get("authority_required", True)
         
         # Constraint-only mode: operate as silent governor instead of active decision engine
-        self.constraint_only_mode = self.config.get("constraint_only_mode", False)
+        self.constraint_only_mode = self.config.get("constraint_only_mode", True)
         
         # Session for connection reuse
         self.session = requests.Session()
@@ -279,3 +279,8 @@ def batch_emit_karma_signals(signals: List[Dict[str, Any]]) -> List[Dict[str, An
 def check_sovereign_bridge_health() -> Dict[str, Any]:
     """Check the health of the sovereign bridge"""
     return sovereign_bridge.health_check()
+
+
+def is_constraint_only_mode() -> bool:
+    """Check if the system is in constraint-only mode"""
+    return sovereign_bridge.constraint_only_mode
