@@ -347,25 +347,31 @@ class STPBridge:
             bool: True if packet is still valid, False if expired
         """
         import re
-        timestamp_str = packet.get('timestamp', '')
+        timestamp_val = packet.get('timestamp', '')
             
-        # Handle case where timestamp might be a float or other type
-        if not isinstance(timestamp_str, str):
-            timestamp_str = str(timestamp_str)
-            
-        # Handle ISO format with or without timezone
-        if timestamp_str.endswith('Z'):
-            timestamp_str = timestamp_str[:-1] + '+00:00'
-        elif '+' not in timestamp_str and not timestamp_str.endswith(('Z', '+00:00')):
-            timestamp_str += '+00:00'
-            
-        # Parse the timestamp
+        # Handle case where timestamp might be a float (epoch) or other type
         try:
-            # Remove timezone info for parsing and add it separately
-            clean_timestamp = re.sub(r'[+-]\\d{2}:\\d{2}$', '', timestamp_str)
-            naive_dt = datetime.fromisoformat(clean_timestamp)
-            packet_timestamp = naive_dt.replace(tzinfo=timezone.utc)
-        except ValueError:
+            if isinstance(timestamp_val, float) or (isinstance(timestamp_val, str) and timestamp_val.replace('.', '').isdigit()):
+                # Handle float epoch timestamp
+                timestamp_val = float(timestamp_val)
+                packet_timestamp = datetime.fromtimestamp(timestamp_val, tz=timezone.utc)
+            elif isinstance(timestamp_val, str):
+                # Handle ISO format with or without timezone
+                timestamp_str = timestamp_val
+                if timestamp_str.endswith('Z'):
+                    timestamp_str = timestamp_str[:-1] + '+00:00'
+                elif '+' not in timestamp_str and not timestamp_str.endswith(('Z', '+00:00')):
+                    timestamp_str += '+00:00'
+                    
+                # Parse the timestamp
+                # Remove timezone info for parsing and add it separately
+                clean_timestamp = re.sub(r'[+-]\\d{2}:\\d{2}$', '', timestamp_str)
+                naive_dt = datetime.fromisoformat(clean_timestamp)
+                packet_timestamp = naive_dt.replace(tzinfo=timezone.utc)
+            else:
+                # If parsing fails, use current time as fallback
+                packet_timestamp = datetime.now(timezone.utc)
+        except (ValueError, TypeError, OSError):
             # If parsing fails, use current time as fallback
             packet_timestamp = datetime.now(timezone.utc)
             
@@ -387,7 +393,8 @@ class STPBridge:
         original_signature = packet.get('signature', '')
         # Temporarily remove signature from packet for verification
         temp_packet = packet.copy()
-        del temp_packet['signature']
+        if 'signature' in temp_packet:
+            del temp_packet['signature']
         # Recreate signature and compare
         recreated_signature = self._sign_payload(temp_packet)
         return original_signature == recreated_signature
@@ -488,7 +495,7 @@ class STPBridge:
         if not self._validate_nonce(packet['nonce']):
             return {
                 'status': 'REJECTED',
-                'reason': 'REPLAY_ATTACK_DETECTED',
+                'reason': 'REPLAY_ATTACK',
                 'timestamp': datetime.now(timezone.utc).isoformat()
             }
         

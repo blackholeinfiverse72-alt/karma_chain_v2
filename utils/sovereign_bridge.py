@@ -203,6 +203,15 @@ class SovereignBridge:
         Returns:
             Dict with authorization result
         """
+        # In safe mode when Core is offline, return appropriate response
+        if not self.is_core_available():
+            return {
+                "status": "SAFE_MODE",
+                "authorized": True,  # Allow in safe mode
+                "reason": "Core unavailable, operating in safe mode",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        
         # Convert KarmaSignal to appropriate format for Sovereign Core
         signal_data = signal.to_dict()
         
@@ -212,13 +221,7 @@ class SovereignBridge:
             "event_type": "canonical_karma_signal"
         }
         
-        result = self.emit_signal(signal_type, payload)
-        
-        # In safe mode when Core is offline, return appropriate response
-        if not self.is_core_available():
-            result["status"] = "SAFE_MODE"
-            
-        return result
+        return self.emit_signal(signal_type, payload)
     
     def send_signal(self, signal: 'KarmaSignal') -> Dict[str, Any]:
         """
