@@ -212,6 +212,33 @@ class SovereignBridge:
             "event_type": "canonical_karma_signal"
         }
         
+        result = self.emit_signal(signal_type, payload)
+        
+        # In safe mode when Core is offline, return appropriate response
+        if not self.is_core_available():
+            result["status"] = "SAFE_MODE"
+            
+        return result
+    
+    def send_signal(self, signal: 'KarmaSignal') -> Dict[str, Any]:
+        """
+        Send a karma signal to the Sovereign Core for authorization
+        
+        Args:
+            signal: The karma signal to send
+            
+        Returns:
+            Dict with authorization result
+        """
+        # Convert KarmaSignal to appropriate format for Sovereign Core
+        signal_data = signal.to_dict()
+        
+        signal_type = SignalType.CANONICAL_KARMA_SIGNAL
+        payload = {
+            "karma_signal": signal_data,
+            "event_type": "canonical_karma_signal"
+        }
+        
         return self.emit_signal(signal_type, payload)
     
     def health_check(self) -> Dict[str, Any]:

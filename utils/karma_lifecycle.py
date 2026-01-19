@@ -145,7 +145,7 @@ class KarmaLifecycleEngine:
         if net_karma > 0:
             carryover_positive = net_karma * 0.2
         elif net_karma < 0:
-            carryover_negative = abs(net_karma) * 0.5
+            carryover_negative = net_karma * 0.5  # Keep negative sign
         
         # Calculate inherited Sanchita karma
         current_sanchita = balances.get("SanchitaKarma", 0.0)

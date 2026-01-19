@@ -339,31 +339,36 @@ class STPBridge:
     def validate_ttl(self, packet: Dict[str, Any]) -> bool:
         """
         Validate that a packet hasn't expired based on TTL
-        
+            
         Args:
             packet: The packet to validate
-            
+                
         Returns:
             bool: True if packet is still valid, False if expired
         """
         import re
         timestamp_str = packet.get('timestamp', '')
+            
+        # Handle case where timestamp might be a float or other type
+        if not isinstance(timestamp_str, str):
+            timestamp_str = str(timestamp_str)
+            
         # Handle ISO format with or without timezone
         if timestamp_str.endswith('Z'):
             timestamp_str = timestamp_str[:-1] + '+00:00'
         elif '+' not in timestamp_str and not timestamp_str.endswith(('Z', '+00:00')):
             timestamp_str += '+00:00'
-        
+            
         # Parse the timestamp
         try:
             # Remove timezone info for parsing and add it separately
-            clean_timestamp = re.sub(r'[+-]\d{2}:\d{2}$', '', timestamp_str)
+            clean_timestamp = re.sub(r'[+-]\\d{2}:\\d{2}$', '', timestamp_str)
             naive_dt = datetime.fromisoformat(clean_timestamp)
             packet_timestamp = naive_dt.replace(tzinfo=timezone.utc)
         except ValueError:
             # If parsing fails, use current time as fallback
             packet_timestamp = datetime.now(timezone.utc)
-        
+            
         current_time = datetime.now(timezone.utc)
         elapsed_time = (current_time - packet_timestamp).total_seconds()
         ttl = packet.get('ttl', self.ttl_seconds)
