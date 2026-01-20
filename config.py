@@ -156,3 +156,11 @@ CORRECTIVE_GUIDANCE_WEIGHTS = {
     "Tap": 1.4,
     "Bhakti": 1.25
 }
+
+# KarmaChain governance settings
+KARMA_MODE = os.getenv("KARMA_MODE", "constraint_only")  # Default to constraint-only mode
+CONSTRAINT_ONLY = KARMA_MODE == "constraint_only"
+
+# Core authorization settings
+CORE_AUTH_REQUIRED = True
+CORE_ENDPOINT = os.getenv("CORE_ENDPOINT", "http://localhost:8002/api/v1/core/authorize")

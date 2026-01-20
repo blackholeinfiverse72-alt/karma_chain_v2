@@ -48,6 +48,7 @@ class SovereignBridge:
         self.authority_required = self.config.get("authority_required", True)
         
         # Constraint-only mode: operate as silent governor instead of active decision engine
+        # By default, this is True as per requirement
         self.constraint_only_mode = self.config.get("constraint_only_mode", True)
         
         # Session for connection reuse

@@ -45,12 +45,17 @@ class KarmaEngine:
             'positive': (70, float('inf'))
         }
         
-        # Load constraint-only mode setting
+        # Load constraint-only mode setting from config
         try:
-            from .sovereign_bridge import is_constraint_only_mode
-            self.constraint_only_mode = is_constraint_only_mode()
+            from ..config import CONSTRAINT_ONLY
+            self.constraint_only_mode = CONSTRAINT_ONLY
         except ImportError:
-            self.constraint_only_mode = False
+            # Fallback to sovereign bridge if config not available
+            try:
+                from .sovereign_bridge import is_constraint_only_mode
+                self.constraint_only_mode = is_constraint_only_mode()
+            except ImportError:
+                self.constraint_only_mode = True  # Default to constraint-only mode
     
     def _extract_text_from_log(self, interaction_log: List[Dict[str, Any]]) -> str:
         """
@@ -278,10 +283,10 @@ class KarmaEngine:
         # Create a karma signal for this change
         karma_signal = KarmaSignal(
             subject_id=user_id,
-            context=context,
+            product_context=context,
             signal='nudge',  # Default signal type for karma changes
             severity=abs(change_amount) / 100.0 if change_amount != 0 else 0.0,  # Normalize to 0-1 scale
-            reason_code=reason,
+            opaque_reason_code=reason,
             requires_core_ack=True  # All significant karma changes require Core ACK
         )
         
@@ -489,7 +494,7 @@ def evaluate_action_karma(user: Dict[str, Any], action: str, intensity: float = 
             'karma_band': 'low' if karma_score < 30 else ('neutral' if karma_score < 70 else 'positive')
         }
     
-    # Calculate corrective recommendations based on the action
+    # CalculThe 2 remaining tests represent test-specific issues that may requirThe 2 remaining tests represent test-specific issues that may requirate corrective recommendations based on the action
     corrective_recommendations = []
     if 'negative' in action.lower() or 'bad' in action.lower() or action.lower() in ['cheat', 'harm', 'break_promise', 'false_speech', 'harm_others']:
         corrective_recommendations.append({
