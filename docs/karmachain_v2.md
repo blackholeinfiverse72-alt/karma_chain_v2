@@ -15,6 +15,19 @@ KarmaChain v2 is a comprehensive Vedic-based karma tracking system that implemen
 
 ## Core Concepts
 
+### PRANA Integration Boundary
+
+⚠️ **PASSIVE OBSERVATION ONLY** - The KarmaChain system currently operates in a passive inspection mode for PRANA integration:
+
+- PRANA → BHIV Bucket → KarmaChain (consumption boundary)
+- KarmaChain consumes PRANA packets ONLY from the Bucket
+- KarmaChain logs and inspects packets only
+- KarmaChain does NOT act on PRANA yet
+- KarmaChain does NOT influence user experience
+- KarmaChain does NOT send feedback upstream
+
+No scoring, no feedback loops, no UX impact at this stage. This boundary ensures PRANA and KarmaChain never communicate directly, maintaining system integrity during the training phases of both systems.
+
 ### Dual-Ledger System
 
 The dual-ledger system maintains two separate token categories:

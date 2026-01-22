@@ -4,6 +4,19 @@
 
 The Karma Engine is a predictive karmic evaluation system that assesses actions based on their karmic impact and provides corrective guidance. It integrates with the existing Q-learning framework to simulate behavior learning and incorporates the Purushartha philosophy (Dharma, Artha, Kama, Moksha) as modifiers.
 
+## PRANA Integration Boundary
+
+⚠️ **PASSIVE OBSERVATION ONLY** - The Karma Engine currently operates in a passive inspection mode for PRANA integration:
+
+- PRANA → BHIV Bucket → Karma Engine (consumption boundary)
+- Karma Engine consumes PRANA packets ONLY from the Bucket
+- Karma Engine logs and inspects packets only
+- Karma Engine does NOT act on PRANA yet
+- Karma Engine does NOT influence user experience
+- Karma Engine does NOT send feedback upstream
+
+No scoring, no feedback loops, no UX impact at this stage. This boundary ensures PRANA and Karma Engine never communicate directly, maintaining system integrity during the training phases of both systems.
+
 ## Core Components
 
 ### 1. Karma Scoring Algorithm

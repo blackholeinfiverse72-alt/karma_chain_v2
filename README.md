@@ -141,6 +141,19 @@ python -c "from observability import karmachain_logger; karmachain_logger.export
 
 ⚠️ **Development Stage** - System has core functionality implemented with testing, but requires integration with Sovereign Core for production deployment
 
+## PRANA Integration Boundary
+
+⚠️ **PASSIVE OBSERVATION ONLY** - The Karma system currently operates in a passive inspection mode for PRANA integration:
+
+- PRANA → BHIV Bucket → Karma (consumption boundary)
+- Karma consumes PRANA packets ONLY from the Bucket
+- Karma logs and inspects packets only
+- Karma does NOT act on PRANA yet
+- Karma does NOT influence user experience
+- Karma does NOT send feedback upstream
+
+No scoring, no feedback loops, no UX impact at this stage. This boundary ensures PRANA and Karma never communicate directly, maintaining system integrity during the training phases of both systems.
+
 ### Core Features Status
 - Unified Event Gateway: ✅ Implemented
 - File Upload System: ✅ Implemented  
