@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-02-03T11:03:11.958855+00:00",
+  "irreversible_actions": {
+    "death_event": "core_authorized",
+    "rebirth": "core_authorized",
+    "access_gating": "core_authorized",
+    "progression_locks": "core_authorized",
+    "restrictions": "core_authorized"
+  },
+  "authorization_flow": {
+    "evaluate": "karmachain",
+    "emit_signal": "canonical_karma_signal",
+    "wait_for_core": "mandatory",
+    "apply_consequence": "only_if_core_ack"
+  },
+  "response_handling": {
+    "ALLOW": "apply_change",
+    "DENY": "discard_with_audit",
+    "TIMEOUT": "safe_no_op"
+  },
+  "enforcement": {
+    "no_bypass": "true",
+    "mandatory_ack": "true",
+    "constraint_only": "enabled"
+  }
+}

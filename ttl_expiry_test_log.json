@@ -1,0 +1,18 @@
+{
+  "test_name": "Vinayak TTL Expiry Validation",
+  "test_type": "ttl_expiry_detection",
+  "signal_id": "36650cc8-c9ce-40ff-a64c-5b0373a041a4",
+  "signal_timestamp": "2026-02-03T10:45:39.964270+00:00",
+  "current_time": "2026-02-03T10:55:39.965760+00:00",
+  "ttl_seconds": 300,
+  "time_difference": 600,
+  "validation_result": {
+    "valid": false,
+    "errors": [
+      "Message expired (TTL violation)"
+    ]
+  },
+  "expected_outcome": "expiry_rejection",
+  "actual_outcome": "rejected",
+  "validation_status": "PASS"
+}

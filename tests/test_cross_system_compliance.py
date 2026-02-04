@@ -29,12 +29,13 @@ class TestCrossSystemCompliance(unittest.TestCase):
         mock_send_signal.return_value = {"status": "NACK", "reason": "UNAUTHORIZED_ACTION"}
         
         # Create a karma signal
-        karma_signal = KarmaSignal(
+        karma_signal = KarmaSignal.create_canonical_signal(
             subject_id=self.subject_id,
-            context='assistant',
+            product_context='assistant',
             signal='restrict',
             severity=0.8,
-            reason_code='HIGH_RISK_USER'
+            ttl=300,
+            opaque_reason_code='HIGH_RISK_USER'
         )
         
         # Mock the STP bridge send_packet to return the expected response

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Request
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, Union
 from datetime import datetime, timezone
@@ -34,7 +34,9 @@ class UnifiedEventResponse(BaseModel):
     routing_info: Dict[str, Any]
 
 @router.post("/", response_model=UnifiedEventResponse)
-async def unified_event_endpoint(request: UnifiedEventRequest):
+async def unified_event_endpoint(request: UnifiedEventRequest, request_obj: Request):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request_obj)
     """
     Unified event gateway that routes different event types to appropriate internal endpoints.
     Stores all events in karma_events collection for audit and debugging.
@@ -310,6 +312,7 @@ async def _handle_stats_request(request: UnifiedEventRequest, event_id: str) -> 
 # Additional endpoint for file-based atonement submissions
 @router.post("/with-file", response_model=UnifiedEventResponse)
 async def unified_event_with_file(
+    request: Request,
     event_type: str = Form(..., description="Event type (currently only 'atonement_with_file' supported)"),
     user_id: str = Form(...),
     plan_id: str = Form(...),
@@ -319,6 +322,8 @@ async def unified_event_with_file(
     tx_hash: Optional[str] = Form(None),
     proof_file: Optional[UploadFile] = File(None)
 ):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request)
     """
     Unified event gateway for file-based submissions.
     Currently supports atonement submissions with file uploads.

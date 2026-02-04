@@ -3,7 +3,7 @@ Analytics Routes Module
 
 Provides API endpoints for karmic analytics and visualization.
 """
-from fastapi import APIRouter, Query, HTTPException, Response
+from fastapi import APIRouter, Query, HTTPException, Response, Request, Depends
 from typing import Optional
 import os
 import json
@@ -20,7 +20,9 @@ from utils.karmic_analytics import (
 router = APIRouter(prefix="/api/v1/analytics", tags=["analytics"])
 
 @router.get("/karma_trends")
-async def karma_trends(weeks: int = Query(4, ge=1, le=52)):
+async def karma_trends(request: Request, weeks: int = Query(4, ge=1, le=52)):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request)
     """
     Get karmic trends data
     
@@ -46,9 +48,12 @@ async def karma_trends(weeks: int = Query(4, ge=1, le=52)):
 
 @router.get("/charts/dharma_seva_flow")
 async def dharma_seva_flow_chart(
+    request: Request,
     weeks: int = Query(4, ge=1, le=52),
     download: bool = Query(False)
 ):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request)
     """
     Generate DharmaPoints/SevaPoints flow chart
     
@@ -85,9 +90,12 @@ async def dharma_seva_flow_chart(
 
 @router.get("/charts/paap_punya_ratio")
 async def paap_punya_ratio_chart(
+    request: Request,
     weeks: int = Query(4, ge=1, le=52),
     download: bool = Query(False)
 ):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request)
     """
     Generate Paap/Punya ratio chart
     
@@ -124,9 +132,12 @@ async def paap_punya_ratio_chart(
 
 @router.get("/exports/weekly_summary")
 async def weekly_summary_export(
+    request: Request,
     weeks: int = Query(4, ge=1, le=52),
     download: bool = Query(True)
 ):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request)
     """
     Export weekly summary to CSV
     
@@ -160,7 +171,9 @@ async def weekly_summary_export(
         raise HTTPException(status_code=500, detail=f"Error exporting summary: {str(e)}")
 
 @router.get("/metrics/live")
-async def live_karmic_metrics():
+async def live_karmic_metrics(request: Request):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request)
     """
     Get live karmic metrics
     

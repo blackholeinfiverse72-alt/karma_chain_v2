@@ -11,6 +11,7 @@ from config import LOKA_THRESHOLDS, KARMA_FACTORS
 from utils.event_bus import EventBus, Channel, publish_karma_lifecycle
 from utils.sovereign_bridge import emit_karma_signal, SignalType
 from utils.karma_engine import compute_karma
+from utils.core_authorization import authorize_death_event, authorize_rebirth, IrreversibleActionType
 
 class KarmaLifecycleEngine:
     """Manages the karmic lifecycle of users in the KarmaChain system"""
@@ -175,9 +176,11 @@ class KarmaLifecycleEngine:
         """
         return f"user_{uuid.uuid4().hex[:12]}"
     
-    def trigger_death_event(self, user_id: str) -> Dict[str, Any]:
+    async def trigger_death_event(self, user_id: str) -> Dict[str, Any]:
         """
         Trigger a death event for a user who has reached the threshold.
+        
+        MANDATORY: Requires Core authorization - No ACK = no effect
         
         Args:
             user_id (str): The user's ID
@@ -206,48 +209,42 @@ class KarmaLifecycleEngine:
         # Calculate karma inheritance
         inheritance = self.calculate_sanchita_inheritance(user)
         
-        # Store death event in database
-        death_event_doc = {
-            "user_id": user_id,
-            "username": user.get("username", "Unknown"),
-            "loka": assigned_loka,
-            "description": description,
-            "inheritance": inheritance,
-            "final_balances": user.get("balances", {}),
-            "net_karma": net_karma,
-            "merit_score": user.get("merit_score", 0),
-            "role": user.get("role", "Unknown"),
-            "rebirth_count": user.get("rebirth_count", 0),
-            "timestamp": datetime.now(timezone.utc),
-            "status": "completed"
-        }
-        
-        death_events_col.insert_one(death_event_doc)
-        
-        # Emit death event to Sovereign Core for authorization
-        event_metadata = {
-            "source": "karma_lifecycle_engine",
-            "user_id": user_id,
-            "event_type": "death_event"
-        }
-        event_payload = {
-            "user_id": user_id,
-            "loka": assigned_loka,
-            "description": description,
-            "inheritance": inheritance,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
-        
-        # Request authorization from Sovereign Core before proceeding
-        authorization_result = emit_karma_signal(SignalType.DEATH_THRESHOLD_REACHED, {
-            "user_id": user_id,
-            "payload": event_payload,
-            "event_type": "death_event"
-        })
-        
-        # Only proceed with publishing if authorized
-        if authorization_result.get("authorized", True):  # Default to True in tests
+        # Define the death event execution function
+        def execute_death_event():
+            # Store death event in database
+            death_event_doc = {
+                "user_id": user_id,
+                "username": user.get("username", "Unknown"),
+                "loka": assigned_loka,
+                "description": description,
+                "inheritance": inheritance,
+                "final_balances": user.get("balances", {}),
+                "net_karma": net_karma,
+                "merit_score": user.get("merit_score", 0),
+                "role": user.get("role", "Unknown"),
+                "rebirth_count": user.get("rebirth_count", 0),
+                "timestamp": datetime.now(timezone.utc),
+                "status": "completed"
+            }
+            
+            death_events_col.insert_one(death_event_doc)
+            
+            # Emit death event to event bus
+            event_metadata = {
+                "source": "karma_lifecycle_engine",
+                "user_id": user_id,
+                "event_type": "death_event"
+            }
+            event_payload = {
+                "user_id": user_id,
+                "loka": assigned_loka,
+                "description": description,
+                "inheritance": inheritance,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            
             publish_karma_lifecycle(event_payload, event_metadata)
+            
             return {
                 "status": "death_event_triggered",
                 "user_id": user_id,
@@ -255,27 +252,24 @@ class KarmaLifecycleEngine:
                 "description": description,
                 "inheritance": inheritance
             }
-        else:
-            print(f"Death event for user {user_id} rejected by Sovereign Core")
-            # Return early without processing the death
-            return {
-                "status": "rejected",
-                "message": "Death event not authorized by Sovereign Core",
-                "user_id": user_id,
-                "authorized": False
-            }
         
-        return {
-            "status": "death_event_triggered",
-            "user_id": user_id,
-            "loka": assigned_loka,
-            "description": description,
-            "inheritance": inheritance
-        }
+        # Request authorization from Core for this irreversible action
+        authorization_result = await authorize_death_event(
+            subject_id=user_id,
+            context="karma_lifecycle",
+            severity=0.95,  # High severity for death event
+            opaque_reason_code="DEATH_THRESHOLD_REACHED",
+            action_func=execute_death_event
+        )
+        
+        # Return the authorization result (including execution status)
+        return authorization_result
     
-    def rebirth_user(self, user_id: str) -> Dict[str, Any]:
+    async def rebirth_user(self, user_id: str) -> Dict[str, Any]:
         """
         Process a user's rebirth, creating a new identity with inherited karma.
+        
+        MANDATORY: Requires Core authorization - No ACK = no effect
         
         Args:
             user_id (str): The user's ID
@@ -316,54 +310,48 @@ class KarmaLifecycleEngine:
         if inheritance["inherited_sanchita"] > 300:
             starting_level = "seva"
         
-        # Create new user document
-        new_user = {
-            "user_id": new_user_id,
-            "username": f"{user.get('username', 'Unknown')}_{user.get('rebirth_count', 0) + 1}",
-            "balances": new_balances,
-            "role": starting_level,
-            "rebirth_count": user.get("rebirth_count", 0) + 1,
-            "created_at": datetime.now(timezone.utc),
-            "last_rebirth": {
-                "timestamp": datetime.now(timezone.utc),
-                "previous_user_id": user_id,
-                "inheritance": inheritance
+        # Define the rebirth execution function
+        def execute_rebirth():
+            # Create new user document
+            new_user = {
+                "user_id": new_user_id,
+                "username": f"{user.get('username', 'Unknown')}_{user.get('rebirth_count', 0) + 1}",
+                "balances": new_balances,
+                "role": starting_level,
+                "rebirth_count": user.get("rebirth_count", 0) + 1,
+                "created_at": datetime.now(timezone.utc),
+                "last_rebirth": {
+                    "timestamp": datetime.now(timezone.utc),
+                    "previous_user_id": user_id,
+                    "inheritance": inheritance
+                }
             }
-        }
-        
-        # Insert new user into database
-        users_col.insert_one(new_user)
-        
-        # Mark original user as deceased
-        users_col.update_one(
-            {"user_id": user_id},
-            {"$set": {"status": "deceased", "deceased_at": datetime.now(timezone.utc)}}
-        )
-        
-        # Emit rebirth event to Sovereign Core for authorization
-        event_metadata = {
-            "source": "karma_lifecycle_engine",
-            "user_id": user_id,
-            "event_type": "rebirth"
-        }
-        event_payload = {
-            "old_user_id": user_id,
-            "new_user_id": new_user_id,
-            "inheritance": inheritance,
-            "starting_level": starting_level,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
-        
-        # Request authorization from Sovereign Core before proceeding
-        authorization_result = emit_karma_signal(SignalType.LIFECYCLE_EVENT, {
-            "user_id": user_id,
-            "payload": event_payload,
-            "event_type": "rebirth"
-        })
-        
-        # Only proceed with publishing if authorized
-        if authorization_result.get("authorized", True):  # Default to True in tests
+            
+            # Insert new user into database
+            users_col.insert_one(new_user)
+            
+            # Mark original user as deceased
+            users_col.update_one(
+                {"user_id": user_id},
+                {"$set": {"status": "deceased", "deceased_at": datetime.now(timezone.utc)}}
+            )
+            
+            # Emit rebirth event to event bus
+            event_metadata = {
+                "source": "karma_lifecycle_engine",
+                "user_id": user_id,
+                "event_type": "rebirth"
+            }
+            event_payload = {
+                "old_user_id": user_id,
+                "new_user_id": new_user_id,
+                "inheritance": inheritance,
+                "starting_level": starting_level,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            
             publish_karma_lifecycle(event_payload, event_metadata)
+            
             return {
                 "status": "rebirth_completed",
                 "old_user_id": user_id,
@@ -371,24 +359,18 @@ class KarmaLifecycleEngine:
                 "inheritance": inheritance,
                 "starting_level": starting_level
             }
-        else:
-            print(f"Rebirth event for user {user_id} rejected by Sovereign Core")
-            # Return early without completing rebirth
-            return {
-                "status": "rejected",
-                "message": "Rebirth event not authorized by Sovereign Core",
-                "old_user_id": user_id,
-                "new_user_id": new_user_id,
-                "authorized": False
-            }
         
-        return {
-            "status": "rebirth_completed",
-            "old_user_id": user_id,
-            "new_user_id": new_user_id,
-            "inheritance": inheritance,
-            "starting_level": starting_level
-        }
+        # Request authorization from Core for this irreversible action
+        authorization_result = await authorize_rebirth(
+            subject_id=user_id,
+            context="karma_lifecycle",
+            severity=0.1,  # Low severity for rebirth (positive event)
+            opaque_reason_code="REBIRTH_ELIGIBILITY",
+            action_func=execute_rebirth
+        )
+        
+        # Return the authorization result (including execution status)
+        return authorization_result
 
 
 def calculate_net_karma(interaction_log: list) -> float:
@@ -417,13 +399,13 @@ def update_prarabdha_counter(user_id: str, increment: float) -> float:
     """Update the Prarabdha karma counter for a user."""
     return lifecycle_engine.update_prarabdha(user_id, increment)
 
-def process_death_event(user_id: str) -> Dict[str, Any]:
+async def process_death_event(user_id: str) -> Dict[str, Any]:
     """Process a death event for a user."""
-    return lifecycle_engine.trigger_death_event(user_id)
+    return await lifecycle_engine.trigger_death_event(user_id)
 
-def process_rebirth(user_id: str) -> Dict[str, Any]:
+async def process_rebirth(user_id: str) -> Dict[str, Any]:
     """Process a rebirth for a user."""
-    return lifecycle_engine.rebirth_user(user_id)
+    return await lifecycle_engine.rebirth_user(user_id)
 
 def check_death_event_threshold(user_id: str) -> Tuple[bool, Dict[str, Any]]:
     """Check if a user has reached the death threshold."""

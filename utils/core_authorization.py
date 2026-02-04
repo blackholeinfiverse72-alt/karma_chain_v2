@@ -13,10 +13,18 @@ Flow: Evaluate → Emit KarmaSignal → WAIT → Core ACK
 
 import asyncio
 import time
-from typing import Dict, Any, Optional
+import logging
+from typing import Dict, Any, Optional, Callable
 from enum import Enum
 from .karma_signal_contract import KarmaSignal, emit_canonical_karma_signal
 from .sovereign_bridge import sovereign_bridge
+from .authorization_logging import (
+    log_auth_request, log_auth_ack, log_auth_deny, 
+    log_auth_timeout, log_action_exec, log_audit_discard
+)
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
 class IrreversibleActionType(Enum):
@@ -35,10 +43,16 @@ async def authorize_irreversible_action(
     severity: float = 0.9,  # High severity for irreversible actions
     opaque_reason_code: str = "IRREVERSIBLE_ACTION",
     ttl: int = 300,
-    timeout: int = 10  # Timeout in seconds
+    timeout: int = 10,  # Timeout in seconds
+    action_func: Optional[Callable] = None  # Function to execute if authorized
 ) -> Dict[str, Any]:
     """
     Authorize an irreversible action through Core authorization gate.
+    
+    MANDATORY BEHAVIOR:
+    - No ACK → no effect
+    - DENY → discard + audit log
+    - TIMEOUT → safe no-op
     
     Args:
         subject_id: ID of the subject
@@ -48,13 +62,24 @@ async def authorize_irreversible_action(
         opaque_reason_code: Opaque reason code
         ttl: Time to live in seconds
         timeout: Timeout in seconds for authorization
+        action_func: Optional function to execute if authorized
     
     Returns:
         Dict with authorization result:
         - status: 'allowed', 'denied', 'timeout', 'error'
         - authorized: Boolean indicating if action is authorized
         - core_response: Response from Core
+        - action_executed: Whether the action was executed
     """
+    
+    # Log the authorization request
+    event_id = log_auth_request(
+        subject_id=subject_id,
+        action_type=action_type.value,
+        context=context,
+        severity=severity,
+        opaque_reason_code=opaque_reason_code
+    )
     
     # Create a canonical karma signal for the irreversible action
     karma_signal = KarmaSignal(
@@ -86,30 +111,51 @@ async def authorize_irreversible_action(
             auth_response = authorization_result['authorization_response']
             if 'authorized' in auth_response:
                 if auth_response['authorized']:
-                    return {
+                    # Core ACK received - execute the action
+                    log_auth_ack(event_id, subject_id, action_type.value, auth_response)
+                    result = {
                         "status": "allowed",
                         "authorized": True,
                         "core_response": auth_response,
-                        "action_applied": True
+                        "action_executed": False
                     }
+                    
+                    # Execute the action if provided
+                    if action_func:
+                        try:
+                            execution_result = action_func()
+                            result["action_executed"] = True
+                            result["execution_result"] = execution_result
+                            log_action_exec(event_id, subject_id, action_type.value, execution_result)
+                        except Exception as e:
+                            result["action_executed"] = False
+                            result["execution_error"] = str(e)
+                            logger.error(f"ACTION EXECUTION FAILED: {action_type.value} for subject {subject_id}: {e}")
+                    
+                    return result
                 else:
+                    # Core DENY - discard and log
+                    log_auth_deny(event_id, subject_id, action_type.value, auth_response)
                     return {
                         "status": "denied",
                         "authorized": False,
                         "core_response": auth_response,
-                        "action_applied": False
+                        "action_executed": False,
+                        "audit_logged": True
                     }
         
         # Small delay before checking again
         await asyncio.sleep(0.1)
     
     # Timeout reached - safe fallback (no effect)
+    log_auth_timeout(event_id, subject_id, action_type.value, timeout)
     return {
         "status": "timeout",
         "authorized": False,
         "core_response": {"reason": "Timeout waiting for Core authorization"},
-        "action_applied": False,
-        "fallback_action": "no_effect"
+        "action_executed": False,
+        "fallback_action": "no_effect",
+        "audit_logged": True
     }
 
 
@@ -258,7 +304,8 @@ async def authorize_restriction(
     subject_id: str,
     context: str,
     severity: float = 0.85,
-    opaque_reason_code: str = "RESTRICTION_NEEDED"
+    opaque_reason_code: str = "RESTRICTION_NEEDED",
+    action_func: Optional[Callable] = None
 ) -> Dict[str, Any]:
     """Authorize restriction"""
     return await authorize_irreversible_action(
@@ -266,7 +313,106 @@ async def authorize_restriction(
         action_type=IrreversibleActionType.RESTRICTION,
         context=context,
         severity=severity,
-        opaque_reason_code=opaque_reason_code
+        opaque_reason_code=opaque_reason_code,
+        action_func=action_func
+    )
+
+
+async def authorize_access_control(
+    subject_id: str,
+    context: str,
+    resource: str,
+    access_level: str,
+    severity: float = 0.7,
+    opaque_reason_code: str = "ACCESS_CONTROL_REQUEST"
+) -> Dict[str, Any]:
+    """
+    Authorize access control decisions.
+    
+    Args:
+        subject_id: ID of the subject
+        context: Context where access is requested
+        resource: Resource being accessed
+        access_level: Level of access requested
+        severity: Severity level
+        opaque_reason_code: Opaque reason code
+    
+    Returns:
+        Dict with authorization result
+    """
+    # Log the access control request
+    logger.info(f"ACCESS CONTROL REQUEST: {subject_id} requesting {access_level} access to {resource} in {context}")
+    
+    # Create a function to execute the access control decision
+    def execute_access_control():
+        # This would typically integrate with the actual access control system
+        # For now, we'll just log the decision
+        logger.info(f"ACCESS GRANTED: {subject_id} granted {access_level} access to {resource}")
+        return {
+            "status": "access_granted",
+            "subject_id": subject_id,
+            "resource": resource,
+            "access_level": access_level,
+            "context": context
+        }
+    
+    # Request authorization from Core
+    return await authorize_irreversible_action(
+        subject_id=subject_id,
+        action_type=IrreversibleActionType.ACCESS_GATING,
+        context=context,
+        severity=severity,
+        opaque_reason_code=opaque_reason_code,
+        action_func=execute_access_control
+    )
+
+
+async def authorize_progression_gate(
+    subject_id: str,
+    context: str,
+    current_level: str,
+    target_level: str,
+    severity: float = 0.6,
+    opaque_reason_code: str = "PROGRESSION_GATE_REQUEST"
+) -> Dict[str, Any]:
+    """
+    Authorize progression gate decisions.
+    
+    Args:
+        subject_id: ID of the subject
+        context: Context where progression is requested
+        current_level: Current level/role
+        target_level: Target level/role
+        severity: Severity level
+        opaque_reason_code: Opaque reason code
+    
+    Returns:
+        Dict with authorization result
+    """
+    # Log the progression gate request
+    logger.info(f"PROGRESSION GATE REQUEST: {subject_id} requesting progression from {current_level} to {target_level} in {context}")
+    
+    # Create a function to execute the progression decision
+    def execute_progression():
+        # This would typically integrate with the actual progression system
+        # For now, we'll just log the decision
+        logger.info(f"PROGRESSION APPROVED: {subject_id} approved for progression from {current_level} to {target_level}")
+        return {
+            "status": "progression_approved",
+            "subject_id": subject_id,
+            "current_level": current_level,
+            "target_level": target_level,
+            "context": context
+        }
+    
+    # Request authorization from Core
+    return await authorize_irreversible_action(
+        subject_id=subject_id,
+        action_type=IrreversibleActionType.PROGRESSION_LOCK,
+        context=context,
+        severity=severity,
+        opaque_reason_code=opaque_reason_code,
+        action_func=execute_progression
     )
 
 

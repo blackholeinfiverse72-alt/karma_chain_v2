@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
@@ -13,7 +13,8 @@ from utils.karma_schema import calculate_weighted_karma_score
 from utils.karma_engine import evaluate_action_karma, determine_corrective_guidance
 from utils.qlearning import q_learning_step, atonement_q_learning_step
 from utils.utils_user import create_user_if_missing
-from validation_middleware import validation_dependency, validation_middleware
+from validation_middleware import validation_middleware
+from utils.authorization import check_authorized_source
 from config import TOKEN_ATTRIBUTES, ACTIONS, REWARD_MAP, INTENT_MAP, ATONEMENT_REWARDS
 import logging
 from utils.sovereign_bridge import emit_karma_signal, SignalType
@@ -81,7 +82,16 @@ class AtonementSubmissionResponse(BaseModel):
     transaction_id: str
 
 @router.get("/karma/{user_id}", response_model=KarmaProfileResponse)
-async def get_karma_profile(user_id: str, _: bool = Depends(validation_dependency)):
+async def get_karma_profile(user_id: str, request: Request = None):
+    # Check authorization first
+    if request:
+        check_authorized_source(request)
+    else:
+        # Create a mock request for dependency injection compatibility
+        from fastapi import Request
+        import asyncio
+        request = Request(scope={'type': 'http', 'headers': []})
+        check_authorized_source(request)
     """
     Get full karma profile for a user.
     
@@ -215,7 +225,16 @@ async def get_karma_profile(user_id: str, _: bool = Depends(validation_dependenc
         raise HTTPException(status_code=500, detail=msg)
 
 @router.post("/log-action/", response_model=LogActionResponse)
-async def log_action(req: LogActionRequest, _: bool = Depends(validation_dependency)):
+async def log_action(req: LogActionRequest, request: Request = None):
+    # Check authorization first
+    if request:
+        check_authorized_source(request)
+    else:
+        # Create a mock request for dependency injection compatibility
+        from fastapi import Request
+        import asyncio
+        request = Request(scope={'type': 'http', 'headers': []})
+        check_authorized_source(request)
     """
     Log user action and update karma.
     
@@ -468,7 +487,16 @@ async def log_action(req: LogActionRequest, _: bool = Depends(validation_depende
         raise HTTPException(status_code=500, detail=msg)
 
 @router.post("/submit-atonement/", response_model=AtonementSubmissionResponse)
-async def submit_atonement(req: AtonementSubmissionRequest, _: bool = Depends(validation_dependency)):
+async def submit_atonement(req: AtonementSubmissionRequest, request: Request = None):
+    # Check authorization first
+    if request:
+        check_authorized_source(request)
+    else:
+        # Create a mock request for dependency injection compatibility
+        from fastapi import Request
+        import asyncio
+        request = Request(scope={'type': 'http', 'headers': []})
+        check_authorized_source(request)
     """
     Validate atonement completion and reduce PaapTokens.
     

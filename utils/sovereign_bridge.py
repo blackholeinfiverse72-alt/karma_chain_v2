@@ -271,7 +271,25 @@ sovereign_bridge = SovereignBridge()
 # Convenience functions
 def emit_karma_signal(signal_type: SignalType, payload: Dict[str, Any]) -> Dict[str, Any]:
     """Emit a karmic signal to Sovereign Core"""
-    return sovereign_bridge.emit_signal(signal_type, payload)
+    # In constraint-only mode, send signals to bucket instead of directly to core
+    from config import BUCKET_ONLY_MODE
+    if BUCKET_ONLY_MODE:
+        from utils.security_hardening import bucket_communicator
+        # Send the signal to the bucket instead of directly to core
+        result = bucket_communicator.send_to_bucket({
+            "signal_type": signal_type.value,
+            "payload": payload,
+            "source": "karmachain",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "signal_id": str(uuid.uuid4())
+        })
+        return {
+            "status": "sent_to_bucket" if result['success'] else "error",
+            "authorized": result['success'],
+            "signal_sent": result
+        }
+    else:
+        return sovereign_bridge.emit_signal(signal_type, payload)
 
 def batch_emit_karma_signals(signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Emit multiple karmic signals to Sovereign Core"""

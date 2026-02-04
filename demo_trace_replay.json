@@ -1,0 +1,60 @@
+{
+  "demo_timestamp": "2026-02-03T11:01:55.138243+00:00",
+  "trace_events": [
+    {
+      "timestamp": "2026-02-03T11:01:51.057289+00:00",
+      "stage": "BUCKET_INGRESS",
+      "data": {
+        "event_type": "bucket_event_received",
+        "user_id": "d6098d5e-a1fc-4c38-a0b5-8729dfffb6d9",
+        "action": "cheating_detected",
+        "bucket_id": "bucket_1"
+      }
+    },
+    {
+      "timestamp": "2026-02-03T11:01:55.134041+00:00",
+      "stage": "KARMA_PROCESSING",
+      "data": {
+        "event_type": "karma_computed",
+        "user_id": "d6098d5e-a1fc-4c38-a0b5-8729dfffb6d9",
+        "karma_change": -50,
+        "signal_emitted": true,
+        "constraint_only": true
+      }
+    },
+    {
+      "timestamp": "2026-02-03T11:01:55.134620+00:00",
+      "stage": "BUCKET_EGRESS",
+      "data": {
+        "event_type": "canonical_signal_emitted",
+        "signal_id": "e4a2e573-0b76-404d-b027-b9d9dd11c4db",
+        "bucket_id": "bucket_1",
+        "secured": true,
+        "signal_data": {
+          "subject_id": "d6098d5e-a1fc-4c38-a0b5-8729dfffb6d9",
+          "product_context": "game",
+          "signal": "restrict",
+          "severity": 0.5,
+          "requires_core_ack": true
+        }
+      }
+    },
+    {
+      "timestamp": "2026-02-03T11:01:55.134620+00:00",
+      "stage": "CORE_GATE",
+      "data": {
+        "event_type": "signal_retrieval_failed",
+        "bucket_id": "bucket_1"
+      }
+    },
+    {
+      "timestamp": "2026-02-03T11:01:55.136041+00:00",
+      "stage": "FINAL_BUCKET_UPDATE",
+      "data": {
+        "event_type": "no_core_authorization",
+        "reason": "Core denied or no response"
+      }
+    }
+  ],
+  "security_status": "fully_hardened"
+}

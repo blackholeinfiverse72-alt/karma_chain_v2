@@ -4,7 +4,7 @@ Karma Lifecycle API Routes
 This module provides API endpoints for the karmic lifecycle engine.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
@@ -82,7 +82,9 @@ class SimulateCycleResponse(BaseModel):
     statistics: Optional[Dict[str, Any]] = None
 
 @router.get("/prarabdha/{user_id}", response_model=PrarabdhaResponse)
-async def get_prarabdha(user_id: str):
+async def get_prarabdha(user_id: str, request: Request):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request)
     """
     Get the current Prarabdha karma counter for a user.
     
@@ -105,7 +107,9 @@ async def get_prarabdha(user_id: str):
         raise HTTPException(status_code=500, detail=f"Error getting Prarabdha: {str(e)}")
 
 @router.post("/prarabdha/update", response_model=PrarabdhaResponse)
-async def update_prarabdha(request: PrarabdhaRequest):
+async def update_prarabdha(request: PrarabdhaRequest, request_obj: Request):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request_obj)
     """
     Update the Prarabdha karma counter for a user.
     
@@ -128,7 +132,9 @@ async def update_prarabdha(request: PrarabdhaRequest):
         raise HTTPException(status_code=500, detail=f"Error updating Prarabdha: {str(e)}")
 
 @router.post("/death/check", response_model=DeathThresholdResponse)
-async def check_death_threshold(request: DeathThresholdRequest):
+async def check_death_threshold(request: DeathThresholdRequest, request_obj: Request):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request_obj)
     """
     Check if a user has reached the death threshold.
     
@@ -154,7 +160,9 @@ async def check_death_threshold(request: DeathThresholdRequest):
         raise HTTPException(status_code=500, detail=f"Error checking death threshold: {str(e)}")
 
 @router.post("/death/process", response_model=DeathEventResponse)
-async def process_death(request: DeathEventRequest):
+async def process_death(request: DeathEventRequest, request_obj: Request):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request_obj)
     """
     Process a death event for a user who has reached the threshold.
     
@@ -165,7 +173,7 @@ async def process_death(request: DeathEventRequest):
         DeathEventResponse: Death event processing results
     """
     try:
-        result = process_death_event(request.user_id)
+        result = await process_death_event(request.user_id)
         return DeathEventResponse(
             status=result["status"],
             user_id=result["user_id"],
@@ -180,7 +188,9 @@ async def process_death(request: DeathEventRequest):
         raise HTTPException(status_code=500, detail=f"Error processing death event: {str(e)}")
 
 @router.post("/rebirth/process", response_model=RebirthResponse)
-async def process_rebirth_endpoint(request: RebirthRequest):
+async def process_rebirth_endpoint(request: RebirthRequest, request_obj: Request):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request_obj)
     """
     Process a rebirth for a user.
     
@@ -191,7 +201,7 @@ async def process_rebirth_endpoint(request: RebirthRequest):
         RebirthResponse: Rebirth processing results
     """
     try:
-        result = process_rebirth(request.user_id)
+        result = await process_rebirth(request.user_id)
         return RebirthResponse(
             status=result["status"],
             old_user_id=result["old_user_id"],
@@ -206,7 +216,9 @@ async def process_rebirth_endpoint(request: RebirthRequest):
         raise HTTPException(status_code=500, detail=f"Error processing rebirth: {str(e)}")
 
 @router.post("/simulate", response_model=SimulateCycleResponse)
-async def simulate_lifecycle_cycles(request: SimulateCycleRequest):
+async def simulate_lifecycle_cycles(request: SimulateCycleRequest, request_obj: Request):
+    from utils.authorization import check_authorized_source
+    check_authorized_source(request_obj)
     """
     Simulate karmic lifecycle cycles for testing purposes.
     

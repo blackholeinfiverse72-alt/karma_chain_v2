@@ -286,6 +286,7 @@ class KarmaEngine:
             product_context=context,
             signal='nudge',  # Default signal type for karma changes
             severity=abs(change_amount) / 100.0 if change_amount != 0 else 0.0,  # Normalize to 0-1 scale
+            ttl=300,  # Add missing TTL parameter
             opaque_reason_code=reason,
             requires_core_ack=True  # All significant karma changes require Core ACK
         )

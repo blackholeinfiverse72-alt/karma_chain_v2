@@ -1,0 +1,81 @@
+{
+  "total_audit_entries": 9,
+  "recent_entries_sample": 9,
+  "chain_integrity": false,
+  "sample_entries": [
+    {
+      "event_id": "sec_20260203_162539_964270",
+      "timestamp": "2026-02-03T10:55:39.964270+00:00",
+      "event_type": "signal_created",
+      "details": {
+        "signal_id": "57a991fa-3599-44b3-bda5-2e88c0ba5431",
+        "subject_id": "c12ca3ab-6008-425f-bf2c-5c54cc5cdec0",
+        "nonce": "dbcf843d..."
+      },
+      "previous_hash": "63f58addb5694946a3989ec2f577df67411381f5e84f34435ee60f6a04b1013c",
+      "entry_hash": "927bbfd78fff685eec5ae320488a3fb254a909500a731f8c284d7f925ec6a6fc"
+    },
+    {
+      "event_id": "sec_20260203_162539_964270",
+      "timestamp": "2026-02-03T10:55:39.964270+00:00",
+      "event_type": "signal_validated",
+      "details": {
+        "signal_id": "57a991fa-3599-44b3-bda5-2e88c0ba5431",
+        "valid": false,
+        "error_count": 1,
+        "errors": [
+          "Replay attack detected"
+        ]
+      },
+      "previous_hash": "927bbfd78fff685eec5ae320488a3fb254a909500a731f8c284d7f925ec6a6fc",
+      "entry_hash": "32bcdb3c8cfd5477f14ce4820f4fe600543c2a037fcd3769b122bee2eda45c41"
+    },
+    {
+      "event_id": "sec_20260203_162539_964270",
+      "timestamp": "2026-02-03T10:55:39.964270+00:00",
+      "event_type": "bucket_send_failed",
+      "details": {
+        "signal_id": "57a991fa-3599-44b3-bda5-2e88c0ba5431",
+        "errors": [
+          "Replay attack detected"
+        ]
+      },
+      "previous_hash": "32bcdb3c8cfd5477f14ce4820f4fe600543c2a037fcd3769b122bee2eda45c41",
+      "entry_hash": "f30146af969c74a6dc6cd253c905d5ee2457f12ee83d4ca7e6d543e119cb1c21"
+    },
+    {
+      "event_id": "sec_20260203_162539_964270",
+      "timestamp": "2026-02-03T10:55:39.964270+00:00",
+      "event_type": "signal_created",
+      "details": {
+        "signal_id": "36650cc8-c9ce-40ff-a64c-5b0373a041a4",
+        "subject_id": "c6dc79d8-61ea-4c22-9ef1-7b584d024334",
+        "nonce": "cc451fc1..."
+      },
+      "previous_hash": "f30146af969c74a6dc6cd253c905d5ee2457f12ee83d4ca7e6d543e119cb1c21",
+      "entry_hash": "410e43517ffa63ceefb0ff709fb499df0220798e742dde6d6337f85b75fafb6c"
+    },
+    {
+      "event_id": "sec_20260203_162539_964270",
+      "timestamp": "2026-02-03T10:55:39.965760+00:00",
+      "event_type": "signal_validated",
+      "details": {
+        "signal_id": "36650cc8-c9ce-40ff-a64c-5b0373a041a4",
+        "valid": false,
+        "error_count": 1,
+        "errors": [
+          "Message expired (TTL violation)"
+        ]
+      },
+      "previous_hash": "410e43517ffa63ceefb0ff709fb499df0220798e742dde6d6337f85b75fafb6c",
+      "entry_hash": "7614f522be478e9949b14e53d150debb85417e78fd0ac6e391605200eb137fe0"
+    }
+  ],
+  "security_system_status": {
+    "nonce_count": 3,
+    "replay_cache_size": 2,
+    "audit_log_size": 9,
+    "chain_integrity": false,
+    "last_audit_hash": "7614f522be478e9949b14e53d150debb85417e78fd0ac6e391605200eb137fe0"
+  }
+}

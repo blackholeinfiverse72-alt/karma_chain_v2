@@ -14,7 +14,7 @@ from utils.karma_feedback_engine import (
     batch_publish_feedback_signals
 )
 from utils.stp_bridge import stp_bridge, check_stp_bridge_health
-from validation_middleware import validation_dependency
+from utils.authorization import check_authorized_source
 
 router = APIRouter()
 
@@ -54,8 +54,16 @@ class STPBridgeHealthResponse(BaseModel):
 @router.post("/feedback_signal", response_model=FeedbackSignalResponse)
 async def compute_and_publish_feedback_signal(
     request: FeedbackSignalRequest,
-    _: bool = Depends(validation_dependency)
+    request_obj: Request = None
 ):
+    # Check authorization first
+    if request_obj:
+        check_authorized_source(request_obj)
+    else:
+        # Create a mock request for dependency injection compatibility
+        from fastapi import Request
+        request_obj = Request(scope={'type': 'http', 'headers': []})
+        check_authorized_source(request_obj)
     """
     Compute dynamic karmic influence and publish it as a telemetry signal.
     
@@ -98,8 +106,16 @@ async def get_feedback_signal(
     user_id: str,
     include_modules: bool = True,
     include_behavioral_bias: bool = True,
-    _: bool = Depends(validation_dependency)
+    request: Request = None
 ):
+    # Check authorization first
+    if request:
+        check_authorized_source(request)
+    else:
+        # Create a mock request for dependency injection compatibility
+        from fastapi import Request
+        request = Request(scope={'type': 'http', 'headers': []})
+        check_authorized_source(request)
     """
     Get computed karmic influence for a user without publishing.
     
@@ -129,8 +145,16 @@ async def get_feedback_signal(
 @router.post("/feedback_signal/batch", response_model=BatchFeedbackSignalResponse)
 async def batch_compute_and_publish_feedback_signals(
     request: BatchFeedbackSignalRequest,
-    _: bool = Depends(validation_dependency)
+    request_obj: Request = None
 ):
+    # Check authorization first
+    if request_obj:
+        check_authorized_source(request_obj)
+    else:
+        # Create a mock request for dependency injection compatibility
+        from fastapi import Request
+        request_obj = Request(scope={'type': 'http', 'headers': []})
+        check_authorized_source(request_obj)
     """
     Compute and publish feedback signals for multiple users in batch.
     
@@ -182,8 +206,16 @@ async def batch_compute_and_publish_feedback_signals(
 
 @router.get("/feedback_signal/health", response_model=STPBridgeHealthResponse)
 async def check_feedback_system_health(
-    _: bool = Depends(validation_dependency)
+    request: Request = None
 ):
+    # Check authorization first
+    if request:
+        check_authorized_source(request)
+    else:
+        # Create a mock request for dependency injection compatibility
+        from fastapi import Request
+        request = Request(scope={'type': 'http', 'headers': []})
+        check_authorized_source(request)
     """
     Check the health of the feedback system and STP bridge.
     
@@ -206,8 +238,16 @@ async def check_feedback_system_health(
 
 @router.get("/feedback_signal/config")
 async def get_feedback_engine_config(
-    _: bool = Depends(validation_dependency)
+    request: Request = None
 ):
+    # Check authorization first
+    if request:
+        check_authorized_source(request)
+    else:
+        # Create a mock request for dependency injection compatibility
+        from fastapi import Request
+        request = Request(scope={'type': 'http', 'headers': []})
+        check_authorized_source(request)
     """
     Get the current configuration of the feedback engine.
     

@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-02-03T11:03:11.959857+00:00",
+  "contract_specification": {
+    "subject_id": "uuid_required",
+    "product_context": "enum_restricted",
+    "signal": "allow|nudge|restrict|escalate",
+    "severity": "0.0_to_1.0",
+    "ttl": "seconds_minimum_1",
+    "requires_core_ack": "true_mandatory",
+    "opaque_reason_code": "string_required"
+  },
+  "format_enforcement": {
+    "legacy_formats": "removed",
+    "alternative_schemas": "prohibited",
+    "validation": "strict",
+    "backwards_compatibility": "disabled"
+  },
+  "implementation": {
+    "creation_method": "create_canonical_signal_only",
+    "validation_method": "canonical_format_required",
+    "emission_method": "bucket_only"
+  }
+}

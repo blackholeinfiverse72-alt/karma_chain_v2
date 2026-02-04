@@ -16,12 +16,26 @@ from routes.v1.karma.lifecycle import router as lifecycle_router  # Karma Lifecy
 # from routes import user, admin  # These modules don't exist yet
 from database import close_client
 import os
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     # Create analytics exports directory if it doesn't exist
     os.makedirs("./analytics_exports", exist_ok=True)
+    
+    # Log the initialization of the isolated KarmaChain
+    logger.info("=== KARMACHAIN SOVEREIGN ISOLATION LOCKDOWN INITIALIZED ===")
+    logger.info("All direct application-facing APIs are now disabled")
+    logger.info("KarmaChain now consumes events ONLY from Bucket endpoints")
+    logger.info("KarmaChain now emits KarmaSignal ONLY to Bucket")
+    logger.info("All requests must come from authorized sources: Bucket or Core")
+    logger.info("=========================================================")
+    
     yield
     # Shutdown
     try:

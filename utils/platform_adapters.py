@@ -42,11 +42,11 @@ class PlatformAdapter:
         """
         return emit_canonical_karma_signal(
             subject_id=subject_id,
-            context=self.context,
+            product_context=self.context,
             signal=signal,
             severity=severity,
-            reason_code=reason_code,
-            requires_core_ack=requires_core_ack
+            ttl=300,
+            opaque_reason_code=reason_code
         )
     
     def evaluate_and_send_signal(self, subject_id: str, action: str) -> Optional[Dict[str, Any]]:
@@ -66,8 +66,7 @@ class PlatformAdapter:
                 subject_id=signal_info["subject_id"],
                 signal=signal_info["signal"],
                 severity=signal_info["severity"],
-                reason_code=signal_info["reason_code"],
-                requires_core_ack=signal_info["requires_core_ack"]
+                reason_code=signal_info["opaque_reason_code"]
             )
         return None
     
@@ -84,12 +83,13 @@ class PlatformAdapter:
             KarmaSignal: Generated canonical karma signal
         """
         from .karma_signal_contract import KarmaSignal
-        return KarmaSignal(
+        return KarmaSignal.create_canonical_signal(
             subject_id=subject_id,
-            context=self.context,
-            signal="nudge",  # Default signal type
+            product_context=self.context,
+            signal="nudge",
             severity=severity,
-            reason_code=reason_code
+            ttl=300,
+            opaque_reason_code=reason_code
         )
 
 

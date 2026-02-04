@@ -164,3 +164,6 @@ CONSTRAINT_ONLY = KARMA_MODE == "constraint_only"
 # Core authorization settings
 CORE_AUTH_REQUIRED = True
 CORE_ENDPOINT = os.getenv("CORE_ENDPOINT", "http://localhost:8002/api/v1/core/authorize")
+
+# Ensure Bucket-only mode is enforced
+BUCKET_ONLY_MODE = True

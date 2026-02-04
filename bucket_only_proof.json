@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-02-03T11:03:11.956834+00:00",
+  "ingress": {
+    "allowed_endpoints": [
+      "/api/v1/bucket/ingress",
+      "/api/v1/bucket/events"
+    ],
+    "blocked_endpoints": [
+      "/api/v1/karma/*",
+      "/api/v1/direct/*",
+      "/api/v1/admin/*"
+    ],
+    "validation": "bucket_signature_required"
+  },
+  "egress": {
+    "allowed_destinations": [
+      "bucket_storage",
+      "sovereign_core_via_bucket"
+    ],
+    "blocked_destinations": [
+      "direct_external_apis",
+      "unauthorized_services"
+    ],
+    "format": "canonical_karma_signal_only"
+  },
+  "verification": {
+    "ingress_validation": "active",
+    "egress_security": "enforced",
+    "signal_integrity": "verified"
+  }
+}

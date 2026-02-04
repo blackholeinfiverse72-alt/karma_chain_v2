@@ -1,0 +1,23 @@
+{
+  "test_name": "Vinayak Replay Attack Validation",
+  "test_type": "replay_detection",
+  "original_signal_id": "57a991fa-3599-44b3-bda5-2e88c0ba5431",
+  "original_send_result": {
+    "success": true,
+    "bucket_id": "bucket_1",
+    "signal_id": "57a991fa-3599-44b3-bda5-2e88c0ba5431",
+    "secured": true
+  },
+  "replay_attempt_result": {
+    "success": false,
+    "errors": [
+      "Replay attack detected"
+    ],
+    "signal_id": "57a991fa-3599-44b3-bda5-2e88c0ba5431"
+  },
+  "replay_cache_size": 1,
+  "timestamp": "2026-02-03T10:55:39.964270+00:00",
+  "expected_outcome": "replay_rejection",
+  "actual_outcome": "rejected",
+  "validation_status": "PASS"
+}

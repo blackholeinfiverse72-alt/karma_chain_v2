@@ -13,8 +13,28 @@ from validation import (
     ValidatedAtonementRequest, ValidatedFileUpload, validate_user_input,
     sanitize_input, validate_karma_action
 )
+from utils.security_hardening import bucket_communicator
+import logging
 
 logger = logging.getLogger(__name__)
+
+# Authorized sources for direct API access
+AUTHORIZED_SOURCES = [
+    "bucket",      # BHIV Bucket
+    "core",        # Sovereign Core
+    "internal"     # Internal system calls
+]
+
+# Define endpoints that should only accept calls from authorized sources
+RESTRICTED_ENDPOINTS = [
+    "/api/v1/log-action",
+    "/api/v1/karma",
+    "/api/v1/feedback_signal",
+    "/api/v1/analytics",
+    "/api/v1/karma/lifecycle",
+    "/api/v1/karma/simulate",
+    "/v1/karma/event"
+]
 
 class ValidationMiddleware:
     """Middleware for comprehensive input validation"""
